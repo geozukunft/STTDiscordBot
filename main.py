@@ -4,6 +4,8 @@ import logging
 from asyncpg.pool import Pool
 from dotenv import load_dotenv
 from discord.ext import commands
+from riotwatcher import LolWatcher, ApiError
+import pandas as pd
 
 import asyncio
 import asyncpg
@@ -15,6 +17,11 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 
+api_key = os.getenv('RIOTAPI')
+watcher = LolWatcher(api_key)
+my_region = os.getenv('myregion')
+
+
 pool: Pool = "eule"
 
 
@@ -24,6 +31,14 @@ async def main():
                                      database=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'),
                                      port=os.getenv('DB_PORT'))
     bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, )
+
+    @bot.command(name='me')
+    async def riotapitest(ctx):
+        me = watcher.summoner.by_name(my_region, 'Schmidi49')
+        await ctx.send(me)
+        my_ranked_stats = watcher.league.by_summoner(my_region, me['id'])
+        await ctx.send(my_ranked_stats)
+
 
     @bot.command(name='register', help='Registriere dich im Spielerverzeichniss')
     @commands.dm_only()
