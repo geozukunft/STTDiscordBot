@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from riotwatcher import LolWatcher, ApiError
 import pandas as pd
+import discord
 
 import asyncio
 import asyncpg
@@ -33,11 +34,17 @@ async def main():
     bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, )
 
     @bot.command(name='me')
-    async def riotapitest(ctx):
-        me = watcher.summoner.by_name(my_region, 'Schmidi49')
-        await ctx.send(me)
+    async def riotapitest(ctx, playername):
+        me = watcher.summoner.by_name(my_region, playername)
         my_ranked_stats = watcher.league.by_summoner(my_region, me['id'])
-        await ctx.send(my_ranked_stats)
+        icon_path = "C:\\Daten\\dragontail-10.19.1\\dragontail-10.19.1\\10.19.1\\img\\profileicon\\" + str(me['profileIconId']) + ".png"
+        file = discord.File(icon_path, filename="image.png")
+        embed = discord.Embed()
+        embed.set_image(url="attachment://image.png")
+        await ctx.send(content="Spieler: " + me['name'] + "\n" + "Level: " + str(me['summonerLevel']) + "\n" +
+                       "Flex Rank: " + my_ranked_stats[0]['tier'] + " " + my_ranked_stats[0]['rank'] + "\n"
+                       "Solo Rank: " + my_ranked_stats[1]['tier'] + " " + my_ranked_stats[1]['rank'], file=file, embed=embed)
+
 
 
     @bot.command(name='register', help='Registriere dich im Spielerverzeichniss')
