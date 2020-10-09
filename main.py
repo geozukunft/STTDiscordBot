@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from riotwatcher import LolWatcher, ApiError
 import pandas as pd
+import discord
+from discord import reaction
+
 
 import asyncio
 import asyncpg
@@ -13,17 +16,18 @@ import re
 
 logging.basicConfig(level=logging.INFO)
 
+#Config aus .env einlesen.
 load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
-
-api_key = os.getenv('RIOTAPI')
-watcher = LolWatcher(api_key)
 my_region = os.getenv('myregion')
+api_key = os.getenv('RIOTAPI')
 
-
+#Variablen assignen
+watcher = LolWatcher(api_key)
 pool: Pool = "eule"
 
+client = discord.Client()
 
 async def main():
     global pool
@@ -32,6 +36,9 @@ async def main():
                                      port=os.getenv('DB_PORT'))
     bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, )
 
+
+
+
     @bot.command(name='me')
     async def riotapitest(ctx):
         me = watcher.summoner.by_name(my_region, 'Schmidi49')
@@ -39,6 +46,19 @@ async def main():
         my_ranked_stats = watcher.league.by_summoner(my_region, me['id'])
         await ctx.send(my_ranked_stats)
 
+    @bot.command(name='clash')
+    async def getclash(ctx):
+        games = watcher.clash.tournaments(my_region)
+        await ctx.send(games)
+
+    @bot.command(name='message')
+    async def testmessage(ctx):
+        await ctx.send("Test")
+        await ctx.send(ctx)
+
+    @client.event
+    async def on_raw_reaction_add(ctx):
+        await ctx.send(ctx)
 
     @bot.command(name='register', help='Registriere dich im Spielerverzeichniss')
     @commands.dm_only()
@@ -479,7 +499,7 @@ async def main():
         print(error)
 
     await bot.start(TOKEN)
-
+    await client.run(TOKEN)
 
 if __name__ == "__main__":
     asyncio.run(main())
