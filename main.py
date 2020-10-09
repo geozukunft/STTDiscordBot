@@ -9,25 +9,23 @@ import pandas as pd
 import discord
 from discord import reaction
 
-
 import asyncio
 import asyncpg
 import re
 
 logging.basicConfig(level=logging.INFO)
 
-#Config aus .env einlesen.
+# Config aus .env einlesen.
 load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 my_region = os.getenv('myregion')
 api_key = os.getenv('RIOTAPI')
 
-#Variablen assignen
+# Variablen assignen
 watcher = LolWatcher(api_key)
 pool: Pool = "eule"
 
-client = discord.Client()
 
 async def main():
     global pool
@@ -35,19 +33,23 @@ async def main():
                                      database=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'),
                                      port=os.getenv('DB_PORT'))
     bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, )
+    client = discord.Client()
+
+
 
     @bot.command(name='me')
     async def riotapitest(ctx, playername):
         me = watcher.summoner.by_name(my_region, playername)
         my_ranked_stats = watcher.league.by_summoner(my_region, me['id'])
-        icon_path = "C:\\Daten\\dragontail-10.19.1\\dragontail-10.19.1\\10.19.1\\img\\profileicon\\" + str(me['profileIconId']) + ".png"
+        icon_path = "C:\\Daten\\dragontail-10.19.1\\dragontail-10.19.1\\10.19.1\\img\\profileicon\\" + str(
+            me['profileIconId']) + ".png"
         file = discord.File(icon_path, filename="image.png")
         embed = discord.Embed()
         embed.set_image(url="attachment://image.png")
         await ctx.send(content="Spieler: " + me['name'] + "\n" + "Level: " + str(me['summonerLevel']) + "\n" +
-                       "Flex Rank: " + my_ranked_stats[0]['tier'] + " " + my_ranked_stats[0]['rank'] + "\n"
-                       "Solo Rank: " + my_ranked_stats[1]['tier'] + " " + my_ranked_stats[1]['rank'], file=file, embed=embed)
-
+                               "Flex Rank: " + my_ranked_stats[0]['tier'] + " " + my_ranked_stats[0]['rank'] + "\n"
+                                                                                                               "Solo Rank: " +
+                               my_ranked_stats[1]['tier'] + " " + my_ranked_stats[1]['rank'], file=file, embed=embed)
 
     @bot.command(name='clash')
     async def getclash(ctx):
@@ -59,8 +61,7 @@ async def main():
         await ctx.send("Test")
         await ctx.send(ctx)
 
-    @client.event
-    async def on_raw_reaction_add(ctx):
+    async def reaction(ctx):
         await ctx.send(ctx)
 
     @bot.command(name='register', help='Registriere dich im Spielerverzeichniss')
@@ -501,8 +502,11 @@ async def main():
                                'folgende: `top, jgl, mid, bot, sup`')
         print(error)
 
+    bot.add_listener(reaction, 'on_raw_reaction_add')
+
     await bot.start(TOKEN)
     await client.run(TOKEN)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
