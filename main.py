@@ -4,12 +4,14 @@ import logging
 from asyncpg.pool import Pool
 from dotenv import load_dotenv
 from discord.ext import commands
+
 from riotwatcher import LolWatcher, ApiError
 import pandas as pd
 import discord
 from discord import reaction
 from datetime import date
 import locale
+
 
 import asyncio
 import asyncpg
@@ -28,12 +30,12 @@ api_key = os.getenv('RIOTAPI')
 watcher = LolWatcher(api_key)
 pool: Pool = "eule"
 
-
 async def main():
     global pool
     pool = await asyncpg.create_pool(user=os.getenv('DB_USER'), password=os.getenv('DB_PW'),
                                      database=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'),
                                      port=os.getenv('DB_PORT'))
+
     bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, )
     client = discord.Client()
 
@@ -439,15 +441,20 @@ async def main():
                 row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
             if row is not None:
                 async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT top FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] is True:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst keine Toplane')
+                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
+                if row[0] != "TOP":
                     async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET top = FALSE WHERE idplayer = $1', member.id)
-                elif row[0] is False or row[0] is None:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst Toplane')
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET top = TRUE WHERE idplayer = $1', member.id)
+                        row = await conn.fetchrow('SELECT top FROM playerdata WHERE idplayer = $1', member.id)
+                    if row[0] is True:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst keine Toplane')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET top = FALSE WHERE idplayer = $1', member.id)
+                    elif row[0] is False or row[0] is None:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst Toplane')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET top = TRUE WHERE idplayer = $1', member.id)
+                else:
+                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
             else:
                 await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
 
@@ -479,15 +486,20 @@ async def main():
                 row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
             if row is not None:
                 async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT jgl FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] is True:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst keinen Jungle')
+                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
+                if row[0] != "JGL":
                     async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET jgl = FALSE WHERE idplayer = $1', member.id)
-                elif row[0] is False or row[0] is None:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst Jungle')
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET jgl = TRUE WHERE idplayer = $1', member.id)
+                        row = await conn.fetchrow('SELECT jgl FROM playerdata WHERE idplayer = $1', member.id)
+                    if row[0] is True:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst keinen Jungle')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET jgl = FALSE WHERE idplayer = $1', member.id)
+                    elif row[0] is False or row[0] is None:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst Jungle')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET jgl = TRUE WHERE idplayer = $1', member.id)
+                else:
+                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
             else:
                 await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
 
@@ -519,15 +531,20 @@ async def main():
                 row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
             if row is not None:
                 async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT mid FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] is True:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst keine Midlane')
+                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
+                if row[0] != "MID":
                     async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET mid = FALSE WHERE idplayer = $1', member.id)
-                elif row[0] is False or row[0] is None:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst Midlane')
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET mid = TRUE WHERE idplayer = $1', member.id)
+                        row = await conn.fetchrow('SELECT mid FROM playerdata WHERE idplayer = $1', member.id)
+                    if row[0] is True:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst keine Midlane')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET mid = FALSE WHERE idplayer = $1', member.id)
+                    elif row[0] is False or row[0] is None:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst Midlane')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET mid = TRUE WHERE idplayer = $1', member.id)
+                else:
+                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
             else:
                 await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
 
@@ -560,15 +577,20 @@ async def main():
                 row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
             if row is not None:
                 async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT bot FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] is True:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst keine Botlane')
+                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
+                if row[0] != "BOT":
                     async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET bot = FALSE WHERE idplayer = $1', member.id)
-                elif row[0] is False or row[0] is None:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst Botlane')
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET bot = TRUE WHERE idplayer = $1', member.id)
+                        row = await conn.fetchrow('SELECT bot FROM playerdata WHERE idplayer = $1', member.id)
+                    if row[0] is True:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst keine Botlane')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET bot = FALSE WHERE idplayer = $1', member.id)
+                    elif row[0] is False or row[0] is None:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst Botlane')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET bot = TRUE WHERE idplayer = $1', member.id)
+                else:
+                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
             else:
                 await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
 
@@ -601,15 +623,20 @@ async def main():
                 row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
             if row is not None:
                 async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT sup FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] is True:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst keinen Support')
+                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
+                if row[0] != "SUP":
                     async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET sup = FALSE WHERE idplayer = $1', member.id)
-                elif row[0] is False or row[0] is None:
-                    await ctx.send('Deine Einstellung wurde geändert du spielst Support')
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE playerdata SET sup = TRUE WHERE idplayer = $1', member.id)
+                        row = await conn.fetchrow('SELECT sup FROM playerdata WHERE idplayer = $1', member.id)
+                    if row[0] is True:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst keinen Support')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET sup = FALSE WHERE idplayer = $1', member.id)
+                    elif row[0] is False or row[0] is None:
+                        await ctx.send('Deine Einstellung wurde geändert du spielst Support')
+                        async with pool.acquire() as conn:
+                            await conn.execute('UPDATE playerdata SET sup = TRUE WHERE idplayer = $1', member.id)
+                else:
+                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
             else:
                 await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
 
@@ -628,6 +655,21 @@ async def main():
     @bot.command(name='gott', hidden=True)
     async def gott(ctx):
         await ctx.send("Meintest du womöglich `!schmidi`?")
+
+    @bot.command(name='list', hidden=True)
+    @commands.dm_only()
+    async def list(ctx):
+        for guild in bot.guilds:
+            if guild.id == GUILD:
+                break
+
+        user = ctx.message.author
+
+        for member in guild.members:
+            for role in member.roles:
+                if role.name == "Schildkröte":
+                    await ctx.send(member.nick + " " + "`" + str(member.id) + "`")
+
 
     @bot.event
     async def on_ready():
