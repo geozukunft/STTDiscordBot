@@ -37,26 +37,9 @@ async def main():
     bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, )
     client = discord.Client()
 
-    @bot.command(name='me')
-    async def riotapitest(ctx, playername):
-        me = watcher.summoner.by_name(my_region, playername)
-        my_ranked_stats = watcher.league.by_summoner(my_region, me['id'])
-        icon_path = "C:\\Daten\\dragontail-10.19.1\\dragontail-10.19.1\\10.19.1\\img\\profileicon\\" + str(
-            me['profileIconId']) + ".png"
-        file = discord.File(icon_path, filename="image.png")
-        embed = discord.Embed()
-        embed.set_image(url="attachment://image.png")
-        await ctx.send(content="Spieler: " + me['name'] + "\n" + "Level: " + str(me['summonerLevel']) + "\n" +
-                               "Flex Rank: " + my_ranked_stats[0]['tier'] + " " + my_ranked_stats[0]['rank'] + "\n"
-                                                                                                               "Solo Rank: " +
-                               my_ranked_stats[1]['tier'] + " " + my_ranked_stats[1]['rank'], file=file, embed=embed)
-
     @bot.command(name='clash')
     @commands.has_any_role('Admin', 'Social Media Manager')
     async def getclash(ctx, inputtime1, inputtime2):
-        global pool
-        poolfunc: Pool = pool
-
         time1 = re.findall(r"^(?:[0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", inputtime1)
         time2 = re.findall(r"^(?:[0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", inputtime2)
 
@@ -96,24 +79,51 @@ async def main():
     @commands.has_any_role('Admin', 'Social Media Manager')
     async def endclash(ctx):
         async with pool.acquire() as conn:
-            events = await conn.fetch("SELECT id FROM clashdata WHERE announced = True AND ended = False")
+            events = await conn.fetch("SELECT * FROM clashdata WHERE announced = True AND ended = False "
+                                      'ORDER BY "registrationTime" ASC')
 
         if events is not None:
             for event in events:
                 async with pool.acquire() as conn:
                     await conn.execute("UPDATE clashdata SET ended = True WHERE id = $1", event['id'])
+                    await conn.execute("DELETE FROM clashplayerdata")
 
-    @bot.command(name='message')
-    async def testmessage(ctx):
-        await ctx.send("Test")
-        await ctx.send(ctx)
+                epochtime = event['registrationTime']
+                d = date.fromtimestamp(epochtime / 1000)
+                locale.setlocale(locale.LC_TIME, "de-DE")
+                day = d.strftime('%A %d %b')
+
+                await ctx.send("Clash Event vom " + day + " gelöscht")
+
+    @bot.command(name='clashstream')
+    @commands.has_any_role('Social Media Manager')
+    async def clashstream(ctx):
+        async with pool.acquire() as conn:
+            events = await conn.fetch('SELECT * FROM clashdata WHERE announced = True AND ended = False '
+                                      'ORDER BY  "registrationTime" ASC')
+
+        await ctx.send("**NUR FÜR STT STREAMER RELEVANT**")
+
+        for event in events:
+            epochtime = event['registrationTime']
+            d = date.fromtimestamp(epochtime / 1000)
+            locale.setlocale(locale.LC_TIME, "de-DE")
+            day = d.strftime('%A %d %b')
+
+            message = await ctx.send("CLASH STREAM " + day)
+            await message.add_reaction('🔴')
+
+            async with pool.acquire() as conn:
+                await conn.execute('UPDATE clashdata SET "streamMessageID" = $1 '
+                                   'WHERE announced = True AND ended = False', message.id)
 
     async def newreaction(reaction):
-        print(reaction.message_id)
         async with pool.acquire() as conn:
             event = await conn.fetchrow('SELECT * FROM clashdata WHERE "announceMessageID" = $1',
                                         reaction.message_id)
             player = await conn.fetchrow('SELECT "regnum" FROM playerdata WHERE "idplayer" = $1', reaction.user_id)
+            stream = await conn.fetchrow('SELECT * FROM clashdata WHERE "streamMessageID" = $1', reaction.message_id)
+            registerd = await conn.fetchrow('SELECT * FROM clashplayerdata WHERE idplayer = $1', reaction.user_id)
 
         if event is not None and player is not None and event['ended'] is False:
 
@@ -121,9 +131,6 @@ async def main():
             d = date.fromtimestamp(epochtime / 1000)
             locale.setlocale(locale.LC_TIME, "de-DE")
             day = d.strftime('%A')
-
-            async with pool.acquire() as conn:
-                registerd = await conn.fetchrow('SELECT * FROM clashplayerdata WHERE idplayer = $1', reaction.user_id)
 
             if registerd is not None:
                 if reaction.emoji.name == "1️⃣":
@@ -165,12 +172,21 @@ async def main():
                             await conn.execute('INSERT INTO clashplayerdata (idplayer, day2time2, regnum) VALUES '
                                                '($1, True, $2) ', reaction.user_id, player['regnum'])
 
+        if stream is not None and player is not None and stream['ended'] is False and registerd is not None:
+
+            for role in reaction.member.roles:
+                if role.name == "Streamer":
+                    async with pool.acquire() as conn:
+                        await conn.execute('UPDATE clashplayerdata SET streaming = True WHERE idplayer = $1',
+                                           reaction.user_id)
+
     async def removereaction(reaction):
-        print(reaction.message_id)
         async with pool.acquire() as conn:
             event = await conn.fetchrow('SELECT * FROM clashdata WHERE "announceMessageID" = $1',
                                         reaction.message_id)
             player = await conn.fetchrow('SELECT "regnum" FROM playerdata WHERE "idplayer" = $1', reaction.user_id)
+            stream = await conn.fetchrow('SELECT * FROM clashdata WHERE "streamMessageID" = $1', reaction.message_id)
+            registerd = await conn.fetchrow('SELECT * FROM clashplayerdata WHERE idplayer = $1', reaction.user_id)
 
         if event is not None and player is not None and event['ended'] is False:
 
@@ -178,9 +194,6 @@ async def main():
             d = date.fromtimestamp(epochtime / 1000)
             locale.setlocale(locale.LC_TIME, "de-DE")
             day = d.strftime('%A')
-
-            async with pool.acquire() as conn:
-                registerd = await conn.fetchrow('SELECT * FROM clashplayerdata WHERE idplayer = $1', reaction.user_id)
 
             if registerd is not None:
                 if reaction.emoji.name == "1️⃣":
@@ -201,6 +214,11 @@ async def main():
                         async with pool.acquire() as conn:
                             await conn.execute('UPDATE clashplayerdata SET day2time2 = False WHERE idplayer = $1',
                                                reaction.user_id)
+
+        if stream is not None and player is not None and stream['ended'] is False and registerd is not None:
+            async with pool.acquire() as conn:
+                await conn.execute('UPDATE clashplayerdata SET streaming = False WHERE idplayer = $1',
+                                   reaction.user_id)
 
     @bot.command(name='register', help='Registriere dich im Spielerverzeichniss')
     @commands.dm_only()
