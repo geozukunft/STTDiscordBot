@@ -66,7 +66,7 @@ async def main():
         for row in rows:
             epochtime = row['registrationTime']
             d = date.fromtimestamp(epochtime / 1000)
-            locale.setlocale(locale.LC_TIME, "de-DE")
+            locale.setlocale(locale.LC_TIME, "de-AT")
             day = d.strftime('%A %d %b')
             message = await ctx.send(":one: " + day + " " + time1[0] + "\n" +
                                      ":two: " + day + " " + time2[0])
@@ -92,7 +92,7 @@ async def main():
 
                 epochtime = event['registrationTime']
                 d = date.fromtimestamp(epochtime / 1000)
-                locale.setlocale(locale.LC_TIME, "de-DE")
+                locale.setlocale(locale.LC_TIME, "de-AT")
                 day = d.strftime('%A %d %b')
 
                 await ctx.send("Clash Event vom " + day + " gelöscht")
@@ -109,7 +109,7 @@ async def main():
         for event in events:
             epochtime = event['registrationTime']
             d = date.fromtimestamp(epochtime / 1000)
-            locale.setlocale(locale.LC_TIME, "de-DE")
+            locale.setlocale(locale.LC_TIME, "de-AT")
             day = d.strftime('%A %d %b')
 
             message = await ctx.send("CLASH STREAM " + day)
@@ -131,7 +131,7 @@ async def main():
 
             epochtime = event['registrationTime']
             d = date.fromtimestamp(epochtime / 1000)
-            locale.setlocale(locale.LC_TIME, "de-DE")
+            locale.setlocale(locale.LC_TIME, "de-AT")
             day = d.strftime('%A')
 
             if registerd is not None:
@@ -194,7 +194,7 @@ async def main():
 
             epochtime = event['registrationTime']
             d = date.fromtimestamp(epochtime / 1000)
-            locale.setlocale(locale.LC_TIME, "de-DE")
+            locale.setlocale(locale.LC_TIME, "de-AT")
             day = d.strftime('%A')
 
             if registerd is not None:
