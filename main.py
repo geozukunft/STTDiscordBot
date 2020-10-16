@@ -12,7 +12,6 @@ from discord import reaction
 from datetime import date
 import locale
 
-
 import asyncio
 import asyncpg
 import re
@@ -26,9 +25,18 @@ GUILD = os.getenv('DISCORD_GUILD')
 my_region = os.getenv('myregion')
 api_key = os.getenv('RIOTAPI')
 
+
+class Tokens:
+    TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+    GUILD = os.getenv('DISCORD_GUILD')
+    my_region = os.getenv('myregion')
+    api_key = os.getenv('RIOTAPI')
+    eule: str = 'Jonas'
+
 # Variablen assignen
 watcher = LolWatcher(api_key)
 pool: Pool = "eule"
+
 
 async def main():
     global pool
@@ -656,9 +664,9 @@ async def main():
     async def gott(ctx):
         await ctx.send("Meintest du womöglich `!schmidi`?")
 
-    @bot.command(name='list', hidden=True)
+    @bot.command(name='liste', hidden=True)
     @commands.dm_only()
-    async def list(ctx):
+    async def liste(ctx):
         for guild in bot.guilds:
             if guild.id == GUILD:
                 break
@@ -669,7 +677,6 @@ async def main():
             for role in member.roles:
                 if role.name == "Schildkröte":
                     await ctx.send(member.nick + " " + "`" + str(member.id) + "`")
-
 
     @bot.event
     async def on_ready():
@@ -683,6 +690,30 @@ async def main():
         )
         members = '\n - '.join([member.name for member in guild.members])
         print(f'Guild Members:\n - {members}')
+
+    # Start Eule
+
+    @bot.command()
+    async def load(ctx, extension_name: str):
+        """Loads an extension."""
+        try:
+            bot.load_extension(f'plugins.{extension_name}')
+        except (AttributeError, ImportError) as e:
+            await ctx.send("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
+            return
+        await ctx.send("{} loaded.".format(extension_name))
+
+    @bot.command()
+    async def unload(ctx, extension_name: str):
+        """Loads an extension."""
+        try:
+            bot.unload_extension(f'plugins.{extension_name}')
+        except (AttributeError, ImportError) as e:
+            await ctx.send("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
+            return
+        await ctx.send("{} unloaded.".format(extension_name))
+
+    # End Eule
 
     @bot.event
     async def on_command_error(ctx, error):
@@ -701,7 +732,7 @@ async def main():
         print(error)
 
     bot.add_listener(newreaction, 'on_raw_reaction_add')
-    bot.add_listener(removereaction,  "on_raw_reaction_remove")
+    bot.add_listener(removereaction, "on_raw_reaction_remove")
 
     await bot.start(TOKEN)
     await client.run(TOKEN)
