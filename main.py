@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from riotwatcher import LolWatcher, ApiError
 import pandas as pd
-import discord
+
 from discord import reaction
 from datetime import date
 import locale
@@ -33,9 +33,17 @@ class Tokens:
     api_key = os.getenv('RIOTAPI')
     eule: str = 'Jonas'
 
+
 # Variablen assignen
 watcher = LolWatcher(api_key)
 pool: Pool = "eule"
+
+
+class BetterBot(commands.Bot):
+    pool = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 async def main():
@@ -44,8 +52,9 @@ async def main():
                                      database=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'),
                                      port=os.getenv('DB_PORT'))
 
-    bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, )
-    client = discord.Client()
+    # bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True)
+    bot = BetterBot(command_prefix='!', description="COOLER BOT", case_insensitive=True)
+    bot.pool = pool
 
     @bot.command(name='clash')
     @commands.has_any_role('Admin', 'Social Media Manager')
@@ -230,116 +239,6 @@ async def main():
                 await conn.execute('UPDATE clashplayerdata SET streaming = False WHERE idplayer = $1',
                                    reaction.user_id)
 
-    @bot.command(name='register', help='Registriere dich im Spielerverzeichniss')
-    @commands.dm_only()
-    async def register(ctx):
-        global pool
-        poolfunc: Pool = pool
-        schildkroete = False
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            if member.id == user.id:
-                break
-        for role in member.roles:
-            if role.name == "Schildkröte":
-                schildkroete = True
-
-        if schildkroete is True:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
-            if row is None:
-                if member.nick is not None:
-                    name = re.findall(r"(\w+)", member.nick)
-                    if name is not None:
-                        async with pool.acquire() as conn:
-                            await conn.execute('INSERT INTO playerdata VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-                                               member.id, name[1], name[0], False, False, False, False, False, "k.A.")
-                        await ctx.send("Du bist nun Registriert du kannst nun mit !main deine Main Lane eintragen "
-                                       "oder mit !top, !jgl usw. eintragen welche Lanes du Spielen kannst")
-                    else:
-                        await ctx.send("Du hast auf dem STT Discord noch keinen Nickname nach dem Format `vorname | "
-                                       "ingamename` bitte richte diesen zuerst ein bevor du dich registrierst")
-                else:
-                    await ctx.send("Du scheinst von den Admins noch keinen Nicknamen bekommen zu haben. Bitte wende "
-                                   "dich an einen STT Admin.")
-            else:
-                await ctx.send("Du bist bereits Registriert um deinen IGN zu ändern benutze bitte !ign INGAMENAME")
-
-        elif schildkroete is False:
-            await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
-                           "sind Schildkröten vorbehalten.")
-
-    @bot.command(name='main', help='Sende mit `!main` `top, jgl, mid, bot, sup` deine Hauptlane')
-    @commands.dm_only()
-    async def mainl(ctx, lane):
-        global pool
-        poolfunc: Pool = pool
-        schildkroete = False
-        value = False
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            if member.id == user.id:
-                break
-        for role in member.roles:
-            if role.name == "Schildkröte":
-                schildkroete = True
-
-        if schildkroete is True:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
-            if row is not None:
-                if lane is not None:
-                    lane = lane.upper()
-                    if lane == "TOP":
-                        value = True
-                        if row[3] is not True:
-                            async with pool.acquire() as conn:
-                                await conn.execute('UPDATE playerdata SET top = True WHERE idplayer = $1', member.id)
-                    elif lane == "JGL":
-                        value = True
-                        if row[4] is not True:
-                            async with pool.acquire() as conn:
-                                await conn.execute('UPDATE playerdata SET jgl = True WHERE idplayer = $1', member.id)
-                    elif lane == "MID":
-                        value = True
-                        if row[5] is not True:
-                            async with pool.acquire() as conn:
-                                await conn.execute('UPDATE playerdata SET mid = True WHERE idplayer = $1', member.id)
-                    elif lane == "BOT" or lane == "ADC":
-                        lane = "BOT"
-                        value = True
-                        if row[6] is not True:
-                            async with pool.acquire() as conn:
-                                await conn.execute('UPDATE playerdata SET bot = True WHERE idplayer = $1', member.id)
-                    elif lane == "SUP":
-                        value = True
-                        if row[7] is not True:
-                            async with pool.acquire() as conn:
-                                await conn.execute('UPDATE playerdata SET sup = True WHERE idplayer = $1', member.id)
-                    else:
-                        await ctx.send(
-                            "Bitte überprüfe deine Eingabe! Valide Optionen sind: `TOP , JGL, MID, BOT, SUP`")
-                    if value is True:
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET primarylane = $1 WHERE idplayer = $2',
-                                               lane.upper(), member.id)
-                        await ctx.send("Deine Hauptlane ist: " + lane.upper())
-
-            else:
-                await ctx.send("Du scheinst noch nicht registriert zu sein bitte tu dies zuerst mit !register")
-        elif schildkroete is False:
-            await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
-                           "sind Schildkröten vorbehalten.")
 
     @bot.command(name='ign', help='Update deinen ingame namen')
     @commands.dm_only()
@@ -374,309 +273,7 @@ async def main():
             await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
                            "sind Schildkröten vorbehalten.")
 
-    @bot.command(name='lanes', help='Zeigt dir an welche Lanes du angegeben hast Spielen zu können')
-    @commands.dm_only()
-    async def lanes(ctx):
-        global pool
-        poolfunc: Pool = pool
-        schildkroete = False
-        mainlane = ""
-        top = ":x:"
-        jgl = ":x:"
-        mid = ":x:"
-        adc = ":x:"
-        sup = ":x:"
 
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            if member.id == user.id:
-                break
-        for role in member.roles:
-            if role.name == "Schildkröte":
-                schildkroete = True
-
-        if schildkroete is True:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
-            if row is not None:
-                if row[3] is True:
-                    top = ":white_check_mark:"
-                if row[4] is True:
-                    jgl = ":white_check_mark:"
-                if row[5] is True:
-                    mid = ":white_check_mark:"
-                if row[6] is True:
-                    adc = ":white_check_mark:"
-                if row[7] is True:
-                    sup = ":white_check_mark:"
-                if row[8] is not None:
-                    mainlane = row[8]
-                await ctx.send("TOP  " + top + "\n" + "JGL   " + jgl + "\n" + "MID  " + mid + "\n" + "BOT  " + adc +
-                               "\n" + "SUP   " + sup + "\n" + "Main Lane: " + mainlane)
-            else:
-                await ctx.send("Du bist noch nicht registriert bitte registriere dich zuerst mit `!register`")
-
-        elif schildkroete is False:
-            await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
-                           "sind Schildkröten vorbehalten.")
-
-    @bot.command(name='top', help='Sende diesen Command um uns mitzuteilen das du Top spielen kannst')
-    @commands.dm_only()
-    async def top(ctx):
-        global pool
-        poolfunc: Pool = pool
-        schildkroete = False
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            if member.id == user.id:
-                break
-        for role in member.roles:
-            if role.name == "Schildkröte":
-                schildkroete = True
-
-        if schildkroete is True:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
-            if row is not None:
-                async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] != "TOP":
-                    async with pool.acquire() as conn:
-                        row = await conn.fetchrow('SELECT top FROM playerdata WHERE idplayer = $1', member.id)
-                    if row[0] is True:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst keine Toplane')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET top = FALSE WHERE idplayer = $1', member.id)
-                    elif row[0] is False or row[0] is None:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst Toplane')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET top = TRUE WHERE idplayer = $1', member.id)
-                else:
-                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
-            else:
-                await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
-
-        elif schildkroete is False:
-            await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
-                           "sind Schildkröten vorbehalten.")
-
-    @bot.command(name='jgl', help='Sende diesen Command um uns mitzuteilen das du Jungle spielen kannst')
-    @commands.dm_only()
-    async def jgl(ctx):
-        global pool
-        poolfunc: Pool = pool
-        schildkroete = False
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            if member.id == user.id:
-                break
-        for role in member.roles:
-            if role.name == "Schildkröte":
-                schildkroete = True
-
-        if schildkroete is True:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
-            if row is not None:
-                async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] != "JGL":
-                    async with pool.acquire() as conn:
-                        row = await conn.fetchrow('SELECT jgl FROM playerdata WHERE idplayer = $1', member.id)
-                    if row[0] is True:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst keinen Jungle')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET jgl = FALSE WHERE idplayer = $1', member.id)
-                    elif row[0] is False or row[0] is None:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst Jungle')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET jgl = TRUE WHERE idplayer = $1', member.id)
-                else:
-                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
-            else:
-                await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
-
-        elif schildkroete is False:
-            await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
-                           "sind Schildkröten vorbehalten.")
-
-    @bot.command(name='mid', help='Sende diesen Command um uns mitzuteilen das du Mid spielen kannst')
-    @commands.dm_only()
-    async def mid(ctx):
-        global pool
-        poolfunc: Pool = pool
-        schildkroete = False
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            if member.id == user.id:
-                break
-        for role in member.roles:
-            if role.name == "Schildkröte":
-                schildkroete = True
-
-        if schildkroete is True:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
-            if row is not None:
-                async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] != "MID":
-                    async with pool.acquire() as conn:
-                        row = await conn.fetchrow('SELECT mid FROM playerdata WHERE idplayer = $1', member.id)
-                    if row[0] is True:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst keine Midlane')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET mid = FALSE WHERE idplayer = $1', member.id)
-                    elif row[0] is False or row[0] is None:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst Midlane')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET mid = TRUE WHERE idplayer = $1', member.id)
-                else:
-                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
-            else:
-                await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
-
-        elif schildkroete is False:
-            await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
-                           "sind Schildkröten vorbehalten.")
-
-    @bot.command(name='adc', help='Sende diesen Command um uns mitzuteilen das du Bot spielen kannst',
-                 aliases=("bot", "adcarry", "marksman"))
-    @commands.dm_only()
-    async def adc(ctx):
-        global pool
-        poolfunc: Pool = pool
-        schildkroete = False
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            if member.id == user.id:
-                break
-        for role in member.roles:
-            if role.name == "Schildkröte":
-                schildkroete = True
-
-        if schildkroete is True:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
-            if row is not None:
-                async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] != "BOT":
-                    async with pool.acquire() as conn:
-                        row = await conn.fetchrow('SELECT bot FROM playerdata WHERE idplayer = $1', member.id)
-                    if row[0] is True:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst keine Botlane')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET bot = FALSE WHERE idplayer = $1', member.id)
-                    elif row[0] is False or row[0] is None:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst Botlane')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET bot = TRUE WHERE idplayer = $1', member.id)
-                else:
-                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
-            else:
-                await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
-
-        elif schildkroete is False:
-            await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
-                           "sind Schildkröten vorbehalten.")
-
-    @bot.command(name='sup', help='Sende diesen Command um uns mitzuteilen das du Support spielen kannst',
-                 aliases=("ks", "killsteal", "griagtkagold"))
-    @commands.dm_only()
-    async def sup(ctx):
-        global pool
-        poolfunc: Pool = pool
-        schildkroete = False
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            if member.id == user.id:
-                break
-        for role in member.roles:
-            if role.name == "Schildkröte":
-                schildkroete = True
-
-        if schildkroete is True:
-            async with pool.acquire() as conn:
-                row = await conn.fetchrow('SELECT * FROM playerdata WHERE idplayer = $1', member.id)
-            if row is not None:
-                async with pool.acquire() as conn:
-                    row = await conn.fetchrow('SELECT primarylane FROM playerdata WHERE idplayer = $1', member.id)
-                if row[0] != "SUP":
-                    async with pool.acquire() as conn:
-                        row = await conn.fetchrow('SELECT sup FROM playerdata WHERE idplayer = $1', member.id)
-                    if row[0] is True:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst keinen Support')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET sup = FALSE WHERE idplayer = $1', member.id)
-                    elif row[0] is False or row[0] is None:
-                        await ctx.send('Deine Einstellung wurde geändert du spielst Support')
-                        async with pool.acquire() as conn:
-                            await conn.execute('UPDATE playerdata SET sup = TRUE WHERE idplayer = $1', member.id)
-                else:
-                    await ctx.send("Diese Lane ist deine Hauptlane du kannst diese nicht deaktivieren!")
-            else:
-                await ctx.send("Du bist noch nicht Registriert bitte registriere dich zuerst mit !register INGAMENAME")
-
-        elif schildkroete is False:
-            await ctx.send("Du scheinst noch keine Schildkröte auf dem STT Discord Server zu sein. Diese Funktionen "
-                           "sind Schildkröten vorbehalten.")
-
-    @bot.command(name='geo', alias=('geozukunft', 'viktor', 'meister', 'erde'), hidden=True)
-    async def geo(ctx):
-        await ctx.send("AHH DER DEFINTIV BESTE SOCIAL MEDIA MANAGER UND ADC FARM GOTT :innocent: ")
-
-    @bot.command(name='schmidi', alias=('schmidi49', 'erik', 'schlechtersupport'), hidden=True)
-    async def schmidi(ctx):
-        await ctx.send("Du hast dich vermutlich verschrieben meintest du nicht `!gott` ?")
-
-    @bot.command(name='gott', hidden=True)
-    async def gott(ctx):
-        await ctx.send("Meintest du womöglich `!schmidi`?")
-
-    @bot.command(name='liste', hidden=True)
-    @commands.dm_only()
-    async def liste(ctx):
-        for guild in bot.guilds:
-            if guild.id == GUILD:
-                break
-
-        user = ctx.message.author
-
-        for member in guild.members:
-            for role in member.roles:
-                if role.name == "Schildkröte":
-                    await ctx.send(member.nick + " " + "`" + str(member.id) + "`")
 
     @bot.event
     async def on_ready():
