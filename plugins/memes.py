@@ -4,8 +4,7 @@ from main import Tokens
 
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
-my_region = Tokens.my_region
-api_key = Tokens.api_key
+my_region = Tokens.LOL_REGION
 
 
 def __init__(self, bot):

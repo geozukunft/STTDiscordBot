@@ -4,8 +4,7 @@ from main import Tokens
 
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
-my_region = Tokens.my_region
-api_key = Tokens.api_key
+my_region = Tokens.LOL_REGION
 
 
 def __init__(self, bot):
@@ -13,7 +12,13 @@ def __init__(self, bot):
 
 
 def setup(bot):
-    bot.add_command(list)
+    bot.add_command(mainl)
+    bot.add_command(lanes)
+    bot.add_command(top)
+    bot.add_command(jgl)
+    bot.add_command(mid)
+    bot.add_command(adc)
+    bot.add_command(sup)
 
 
 @commands.command(name='main', help='Sende mit `!main` `top, jgl, mid, bot, sup` deine Hauptlane')
