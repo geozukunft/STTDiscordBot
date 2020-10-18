@@ -2,10 +2,20 @@ from discord.ext import commands
 from datetime import date
 import locale
 from main import Tokens
+from asyncpg.pool import Pool
+import asyncpg
+import os
 
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
 my_region = Tokens.LOL_REGION
+DB_USER = Tokens.DB_USER
+DB_PW = Tokens.DB_PW
+DB_HOST = Tokens.DB_HOST
+DB_NAME = Tokens.DB_NAME
+DB_PORT = Tokens.DB_PORT
+
+pool: Pool = "eule"
 
 
 def __init__(self, bot):
@@ -17,8 +27,11 @@ def setup(bot):
     bot.add_listener(removereaction, "on_raw_reaction_remove")
 
 
+
+
 async def newreaction(reaction):
-    pool = BetterBot.pool
+    global pool
+    pool = await asyncpg.create_pool(user=DB_USER, password=DB_PW, database=DB_NAME, host=DB_HOST, port=DB_PORT)
 
     async with pool.acquire() as conn:
         event = await conn.fetchrow('SELECT * FROM clashdata WHERE "announceMessageID" = $1',
@@ -84,7 +97,7 @@ async def newreaction(reaction):
 
 
 async def removereaction(reaction):
-    pool = reaction.bot.pool
+
 
     async with pool.acquire() as conn:
         event = await conn.fetchrow('SELECT * FROM clashdata WHERE "announceMessageID" = $1',

@@ -6,15 +6,11 @@ from dotenv import load_dotenv
 from discord.ext import commands
 
 from riotwatcher import LolWatcher, ApiError
-import pandas as pd
 
-from discord import reaction
-from datetime import date
-import locale
 
 import asyncio
 import asyncpg
-import re
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,6 +25,11 @@ class Tokens:
     LOL_REGION: str = os.getenv('myregion')
     RIOT_TOKEN: str = os.getenv('RIOTAPI')
     eule: str = 'Jonas'
+    DB_USER: str = os.getenv('DB_USER')
+    DB_PW: str = os.getenv('DB_PW')
+    DB_NAME: str = os.getenv('DB_NAME')
+    DB_HOST: str = os.getenv('DB_HOST')
+    DB_PORT: str = os.getenv('DB_PORT')
 
 
 # Variablen assignen
@@ -65,8 +66,10 @@ async def main():
         )
         members = '\n - '.join([member.name for member in guild.members])
         print(f'Guild Members:\n - {members}')
+        ignored = ["__init__"]
+        extensions = [x for x in [os.path.splitext(filename)[0] for filename in os.listdir('./plugins')] if x not in ignored]
 
-        for extension in startup_extensions:
+        for extension in extensions:
             try:
                 bot.load_extension(f'plugins.{extension}')
             except (AttributeError, ImportError) as e:
