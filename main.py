@@ -4,13 +4,15 @@ import logging
 from asyncpg.pool import Pool
 from dotenv import load_dotenv
 from discord.ext import commands
-
+import discord
 from riotwatcher import LolWatcher, ApiError
+from pyot.core import Settings
 
+from pyot.models import lol
+from pyot.utils import loop_run
 
 import asyncio
 import asyncpg
-
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,6 +20,7 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 
 startup_extensions = ["clash", "general", "league", "memes", "users", "reaction"]
+
 
 class Tokens:
     TOKEN: str = os.getenv('DISCORD_BOT_TOKEN')
@@ -36,6 +39,29 @@ class Tokens:
 watcher = LolWatcher(Tokens.RIOT_TOKEN)
 pool: Pool = "eule"
 
+intents = discord.Intents.default()
+intents.members = True
+
+Settings(
+    MODEL="LOL",
+    DEFAULT_PLATFORM="EUW1",
+    DEFAULT_REGION="EUROPE",
+    DEFAULT_LOCALE="DE_DE",
+    PIPELINE=[
+        {"BACKEND": "pyot.stores.Omnistone"},
+        {"BACKEND": "pyot.stores.MerakiCDN"},
+        {"BACKEND": "pyot.stores.CDragon"},
+        {
+            "BACKEND": "pyot.stores.RiotAPI",
+            "API_KEY": Tokens.RIOT_TOKEN,  # API KEY
+            "RATE_LIMITER": {
+                    "BACKEND": "pyot.limiters.MemoryLimiter",
+                    "LIMITING_SHARE": 1,
+            }
+        }
+    ]
+).activate()
+
 
 class BetterBot(commands.Bot):
     pool = None
@@ -51,7 +77,7 @@ async def main():
                                      port=os.getenv('DB_PORT'))
 
     # bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True)
-    bot = BetterBot(command_prefix='!', description="COOLER BOT", case_insensitive=True)
+    bot = BetterBot(command_prefix='!', description="COOLER BOT", case_insensitive=True, intents=intents)
     bot.pool = pool
 
     @bot.event
@@ -67,7 +93,8 @@ async def main():
         members = '\n - '.join([member.name for member in guild.members])
         print(f'Guild Members:\n - {members}')
         ignored = ["__init__"]
-        extensions = [x for x in [os.path.splitext(filename)[0] for filename in os.listdir('./plugins')] if x not in ignored]
+        extensions = [x for x in [os.path.splitext(filename)[0] for filename in os.listdir('./plugins')] if
+                      x not in ignored]
 
         for extension in extensions:
             try:
@@ -99,6 +126,17 @@ async def main():
             return
         await ctx.send("{} unloaded.".format(extension_name))
 
+    @bot.command()
+    async def reload(ctx, extension_name: str):
+        """Loads an extension."""
+        try:
+            bot.unload_extension(f'plugins.{extension_name}')
+            bot.load_extension(f'plugins.{extension_name}')
+        except (AttributeError, ImportError) as e:
+            await ctx.send("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
+            return
+        await ctx.send("{} reloaded.".format(extension_name))
+
     # End Eule
 
     @bot.event
@@ -118,8 +156,6 @@ async def main():
         if isinstance(error, commands.ExtensionAlreadyLoaded):
             await ctx.send('Module already loaded')
         print(error)
-
-
 
     await bot.start(Tokens.TOKEN)
 
