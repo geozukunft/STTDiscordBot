@@ -30,13 +30,17 @@ api_key = os.getenv('RIOTAPI')
 watcher = LolWatcher(api_key)
 pool: Pool = "eule"
 
+
+intents = discord.Intents.default()
+intents.members = True
+
 async def main():
     global pool
     pool = await asyncpg.create_pool(user=os.getenv('DB_USER'), password=os.getenv('DB_PW'),
                                      database=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'),
                                      port=os.getenv('DB_PORT'))
 
-    bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, )
+    bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True, intents=intents)
     client = discord.Client()
 
     @bot.command(name='clash')
