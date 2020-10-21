@@ -7,6 +7,7 @@ from main import Tokens, watcher
 from pyot.models import lol
 from pyot.utils import loop_run
 from pyot.core import Gatherer
+import pyot.core
 
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
@@ -49,9 +50,31 @@ async def matchcount(ctx, summonername):
 
 @commands.command()
 async def mc(ctx, summonername):
+    goldSum: int = 0
+    kills: int = 0
+    deaths: int = 0
+    assists: int = 0
+    i: int = 0
     summoner = await lol.Summoner(name=summonername, platform="EUW1").get()
-    matchlist = await lol.MatchHistory(summoner.account_id).get()
+    responses = []
+    matchlist = await lol.MatchHistory(summoner.account_id).query(begin_index=100).get()
     for match in matchlist.matches:
-        responses = match.role
-    for r in responses:
-        await ctx.send(r)
+        matchdata = await lol.match.Match(match.id).get()
+        for team in matchdata.teams:
+            for participant in team.participants:
+                if summonername == participant.summoner_name:
+                    goldSum += participant.stats.gold_earned
+                    kills += participant.stats.kills
+                    deaths += participant.stats.deaths
+                    assists += participant.stats.assists
+                    print("game" + str(i))
+                    i += 1
+        temp = await lol.Champion(match.champion.id).get()
+        responses.append(temp.name)
+
+    await ctx.send("Kills: " + str(kills))
+    await ctx.send("Deaths: " + str(deaths))
+    await ctx.send("Assists: " + str(assists))
+    await ctx.send("Gold Earned: " + str(goldSum))
+    #await ctx.send(responses)
+    #await ctx.send(responses.count('Sylas'))
