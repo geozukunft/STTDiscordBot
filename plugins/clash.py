@@ -34,17 +34,17 @@ async def getclash(ctx, inputtime1, inputtime2):
 
     for tournament in tournaments:
         async with pool.acquire() as conn:
-            row = await conn.fetchrow('SELECT * FROM clashdata WHERE id = $1', tournament['id'])
+            row = await conn.fetchrow('SELECT * FROM clash_events WHERE id = $1', tournament['id'])
         if row is None:
             async with pool.acquire() as conn:
-                await conn.execute('INSERT INTO clashdata VALUES ($1, $2, $3, $4, $5, $6)', tournament['id'],
+                await conn.execute('INSERT INTO clash_events VALUES ($1, $2, $3, $4, $5, $6)', tournament['id'],
                                    tournament['nameKey'], tournament['nameKeySecondary'],
                                    tournament['schedule'][0]['registrationTime'],
                                    tournament['schedule'][0]['startTime'], tournament['schedule'][0]['cancelled'])
 
     async with pool.acquire() as conn:
         rows = await conn.fetch(
-            'SELECT * FROM clashdata WHERE "announced" = False ORDER BY  "registrationTime" ASC')
+            'SELECT * FROM clash_events WHERE "announced" = False ORDER BY  "registrationTime" ASC')
 
     await ctx.send("**Clashanmeldung**")
 
@@ -59,7 +59,7 @@ async def getclash(ctx, inputtime1, inputtime2):
         await message.add_reaction('2️⃣')
 
         async with pool.acquire() as conn:
-            await conn.execute('UPDATE clashdata SET "announced" = True, "announceMessageID" = $1 '
+            await conn.execute('UPDATE clash_events SET "announced" = True, "announceMessageID" = $1 '
                                'WHERE id = $2', message.id, row['id'])
 
 

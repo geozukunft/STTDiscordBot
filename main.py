@@ -144,8 +144,7 @@ async def main():
         if isinstance(error, commands.errors.PrivateMessageOnly):
             await ctx.send('Dieser Command geht nur in einer Privatnachricht!')
         if isinstance(error, commands.errors.MissingRole):
-            await ctx.send('Du bist leider keine Schildkröte bei STT lese bitte dazu die Anleitung zum werden einer '
-                           'Schildkröte auf dem Discord Server')
+            await ctx.send('Du hast für diesen Befehl nicht genügend Rechte!')
         if isinstance(error, commands.UserInputError):
             if error.param.name == "ign":
                 await ctx.send('Scheint als hättest du keinen Ingamenamen mit angegeben bitte stelle sicher das du '
