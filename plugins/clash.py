@@ -113,7 +113,9 @@ async def getclash(ctx, *args):
                 embed_field = f'{emojis[i]} {event_time.strftime("%H:%M")}'
                 embed.add_field(name=embed_field, value="-----", inline=False)
                 i += 1
-            message = await ctx.channel.send(content=None, embed=embed)
+
+            clash_channel = discord.utils.get(ctx.guild.channels, name="clash-announcements")
+            message = await clash_channel.send(content=None, embed=embed)
             j = 0
             for event_time in event_times:
                 await message.add_reaction(emojis[j])
