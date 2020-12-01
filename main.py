@@ -3,10 +3,11 @@ import logging
 
 from asyncpg.pool import Pool
 from dotenv import load_dotenv
-from discord.ext import commands
+from discord.ext import commands, tasks
 import discord
 from riotwatcher import LolWatcher, ApiError
 from pyot.core import Settings
+import builtins
 
 from pyot.models import lol
 from pyot.utils import loop_run
@@ -14,7 +15,11 @@ from pyot.utils import loop_run
 import asyncio
 import asyncpg
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
 # Config aus .env einlesen.
 load_dotenv()
@@ -55,8 +60,8 @@ Settings(
             "BACKEND": "pyot.stores.RiotAPI",
             "API_KEY": Tokens.RIOT_TOKEN,  # API KEY
             "RATE_LIMITER": {
-                    "BACKEND": "pyot.limiters.MemoryLimiter",
-                    "LIMITING_SHARE": 1,
+                "BACKEND": "pyot.limiters.MemoryLimiter",
+                "LIMITING_SHARE": 1,
             }
         }
     ]
@@ -70,8 +75,15 @@ class BetterBot(commands.Bot):
         super().__init__(*args, **kwargs)
 
 
+
+
+
+
+
+
 async def main():
     global pool
+
     pool = await asyncpg.create_pool(user=os.getenv('DB_USER'), password=os.getenv('DB_PW'),
                                      database=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'),
                                      port=os.getenv('DB_PORT'))
@@ -79,6 +91,7 @@ async def main():
     # bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True)
     bot = BetterBot(command_prefix='!', description="COOLER BOT", case_insensitive=True, intents=intents)
     bot.pool = pool
+
 
     @bot.event
     async def on_ready():
@@ -157,6 +170,11 @@ async def main():
         print(error)
 
     await bot.start(Tokens.TOKEN)
+
+
+
+
+
 
 
 if __name__ == "__main__":

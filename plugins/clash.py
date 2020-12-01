@@ -1,8 +1,10 @@
 from discord.ext import commands
 from asyncpg.pool import Pool
 import re
-from datetime import date
+from datetime import date, datetime
+from dateutil import tz
 import locale
+import discord.embeds
 
 from main import Tokens
 from main import watcher
@@ -10,6 +12,11 @@ from main import watcher
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
 my_region = Tokens.LOL_REGION
+
+from pyot.models import lol
+from pyot.utils import loop_run
+from pyot.core import Gatherer
+import pyot.core
 
 
 def __init__(self, bot):
@@ -20,47 +27,108 @@ def setup(bot):
     bot.add_command(getclash)
     bot.add_command(endclash)
     bot.add_command(clashstream)
+    bot.add_command(listclash)
+
+
+@commands.command(name='listclash')
+@commands.has_any_role('Admin', 'Social Media Manager')
+async def listclash(ctx):
+    pool = ctx.bot.pool
+    currenttime: int = datetime.timestamp(datetime.now())
+    tournaments = await lol.clash.ClashTournaments().get()
+    print(tournaments)
+    for tournament in tournaments.tournaments:
+        print(str(tournament.schedule[0].registration_time.timestamp()))
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow('SELECT * FROM clash_events WHERE id = $1', tournament.id)
+        if row is None:
+            async with pool.acquire() as conn:
+                await conn.execute('INSERT INTO clash_events VALUES ($1, $2, $3, $4, $5, $6)', tournament.id,
+                                   tournament.name_key, tournament.name_key_secondary,
+                                   tournament.schedule[0].registration_time.timestamp(),
+                                   tournament.schedule[0].start_time.timestamp(), tournament.schedule[0].cancelled)
+        else:
+            async with pool.acquire() as conn:
+                await conn.execute('UPDATE clash_events SET cancelled = $1 WHERE id = $2',
+                                   tournament.schedule[0].cancelled, tournament.id)
+
+    async with pool.acquire() as conn:
+        future_events = await conn.fetch('SELECT * FROM clash_events WHERE "registrationTime" > $1 '
+                                         'AND cancelled = FALSE AND announced = FALSE', currenttime)
+
+    embed = discord.Embed(title="Zukünftige Clash Spieltage", description="Die noch nicht announced wurden!")
+    for event in future_events:
+        locale.setlocale(locale.LC_TIME, "de-DE")
+        playday = datetime.utcfromtimestamp(event['registrationTime']).strftime('%A %d %b')
+        starttime = datetime.utcfromtimestamp(event['registrationTime'])
+        from_zone = tz.gettz('UTC')
+        to_zone = tz.gettz('Europe/Vienna')
+        starttime = starttime.replace(tzinfo=from_zone)
+        cetstarttime = starttime.astimezone(to_zone).strftime('%H:%M')
+
+        value = f'ID: **{str(event["id"])}** \n ' \
+                f'Start: **{cetstarttime}** \n' \
+                f'Name: {event["nameKey"]} \n' \
+                f'Tag: {event["nameKeySecondary"]}'
+
+        embed.add_field(name=playday, value=value, inline=False)
+    await ctx.channel.send(content=None, embed=embed)
 
 
 @commands.command(name='clash')
 @commands.has_any_role('Admin', 'Social Media Manager')
-async def getclash(ctx, inputtime1, inputtime2):
+async def getclash(ctx, *args):
     pool = ctx.bot.pool
-
-    time1 = re.findall(r"^(?:[0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", inputtime1)
-    time2 = re.findall(r"^(?:[0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", inputtime2)
-
-    tournaments = watcher.clash.tournaments(my_region)
-
-    for tournament in tournaments:
-        async with pool.acquire() as conn:
-            row = await conn.fetchrow('SELECT * FROM clash_events WHERE id = $1', tournament['id'])
-        if row is None:
+    clash_id: int
+    times = []
+    event_times = []
+    event_times_unix = []
+    emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
+    if len(args) < 2:
+        await ctx.send("Bitte stelle sicher an erster Stelle die ID des Clash Events das du erstellen möchtest "
+                       "gelistet zu haben und danach bis zu 10 verschiedene Uhrzeiten!")
+    if len(args) >= 2:
+        clash_id = re.findall(r"(?<!\d)\d{4,4}(?!\d)", args[0])
+        if clash_id:
             async with pool.acquire() as conn:
-                await conn.execute('INSERT INTO clash_events VALUES ($1, $2, $3, $4, $5, $6)', tournament['id'],
-                                   tournament['nameKey'], tournament['nameKeySecondary'],
-                                   tournament['schedule'][0]['registrationTime'],
-                                   tournament['schedule'][0]['startTime'], tournament['schedule'][0]['cancelled'])
+                event = await conn.fetchrow('SELECT * FROM clash_events WHERE id = $1', int(clash_id[0]))
 
-    async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            'SELECT * FROM clash_events WHERE "announced" = False ORDER BY  "registrationTime" ASC')
+            for arg in args[1:]:
+                rawtime = re.findall(r"^(?:[0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", arg)
+                times.append(rawtime)
 
-    await ctx.send("**Clashanmeldung**")
+            playday = datetime.utcfromtimestamp(event['registrationTime'])
+            for time in times:
+                splittime = time[0].split(":")
+                temptime = playday.replace(hour=int(splittime[0]), minute=int(splittime[1]), tzinfo=tz.gettz('UTC'))
+                event_times.append(temptime)
+                event_times_unix.append(temptime.timestamp())
+            locale.setlocale(locale.LC_TIME, "de-DE")
+            playday = datetime.utcfromtimestamp(event['registrationTime']).strftime('%A %d %b')
+            embed_title = f'Clash am {playday}'
+            embed_desc = f'Bitte reagiere auf jene Uhrzeiten ab denen du für Clash Zeit hast!'
+            embed = discord.Embed(title=embed_title, description=embed_desc)
+            i = 0
+            for event_time in event_times:
+                embed_field = f'{emojis[i]} {event_time.strftime("%H:%M")}'
+                embed.add_field(name=embed_field, value="-----", inline=False)
+                i += 1
+            message = await ctx.channel.send(content=None, embed=embed)
+            j = 0
+            for event_time in event_times:
+                await message.add_reaction(emojis[j])
+                j += 1
 
-    for row in rows:
-        epochtime = row['registrationTime']
-        d = date.fromtimestamp(epochtime / 1000)
-        locale.setlocale(locale.LC_TIME, "de-DE")
-        day = d.strftime('%A %d %b')
-        message = await ctx.send(":one: " + day + " " + time1[0] + "\n" +
-                                 ":two: " + day + " " + time2[0])
-        await message.add_reaction('1️⃣')
-        await message.add_reaction('2️⃣')
+            async with pool.acquire() as conn:
+                await conn.execute('INSERT INTO reactions(message_id, type) VALUES ($1, $2)', message.id, "CLASH")
+                await conn.execute('UPDATE clash_events SET event_times = $1 , "announceMessageId" = $2 '
+                                   'WHERE id = $3', event_times_unix, message.id, event['id'])
 
-        async with pool.acquire() as conn:
-            await conn.execute('UPDATE clash_events SET "announced" = True, "announceMessageID" = $1 '
-                               'WHERE id = $2', message.id, row['id'])
+        else:
+            await ctx.send("Bitte stelle sicher an erster Stelle die ID des Clash Events das du erstellen möchtest "
+                           "gelistet zu haben und danach bis zu 10 verschiedene Uhrzeiten! Du scheinst die ID des "
+                           "Events vergessen zu haben!")
+            return
 
 
 @commands.command(name='endclash')

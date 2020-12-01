@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord.utils import get
 
 from main import Tokens
 
@@ -14,6 +15,8 @@ def __init__(self, bot):
 def setup(bot):
     bot.add_command(list)
     bot.add_command(generaterules)
+    bot.add_command(generatelanes)
+    bot.add_command(generatemain)
 
 
 @commands.command(name='list', hidden=True)
@@ -49,6 +52,37 @@ async def generaterules(ctx):
     async with pool.acquire() as conn:
         await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "RULES")
     print("test")
+
+@commands.command(name='generatelanes', hidden=True)
+@commands.has_role('Social Media Manager')
+async def generatelanes(ctx):
+    pool = ctx.bot.pool
+
+    message = await ctx.send('Reagiere bitte auf diese Nachricht welche Lanes du in League spielst.')
+    await message.add_reaction('<:TopLane:777326001964974080>')
+    await message.add_reaction('<:Jungle:777326001965105162>')
+    await message.add_reaction('<:MidLane:777326001902059561>')
+    await message.add_reaction('<:BotLane:777326001877286922>')
+    await message.add_reaction('<:Support:777326002061180928>')
+
+    async with pool.acquire() as conn:
+        await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "LANES")
+
+
+@commands.command(name='generatemain', hidden=True)
+@commands.has_role('Social Media Manager')
+async def generatemain(ctx):
+    pool = ctx.bot.pool
+
+    message = await ctx.send('Reagiere bitte auf diese Nachricht welche Lane du primär Spielst.')
+    await message.add_reaction('<:TopLane:777326001964974080>')
+    await message.add_reaction('<:Jungle:777326001965105162>')
+    await message.add_reaction('<:MidLane:777326001902059561>')
+    await message.add_reaction('<:BotLane:777326001877286922>')
+    await message.add_reaction('<:Support:777326002061180928>')
+
+    async with pool.acquire() as conn:
+        await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "MAINLANE")
 
 
 """
