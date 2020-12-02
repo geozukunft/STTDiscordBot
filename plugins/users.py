@@ -47,7 +47,7 @@ async def ign(ctx, ign):
             await member.edit(nick=ign + " | " + row[0])
             async with pool.acquire() as conn:
                 await conn.execute('UPDATE members SET username = $1 WHERE discord_id = $2', ign, ctx.author.id)
-            await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + ctx.author.nick + "`")
+            await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + member.nick + "`")
         else:
             await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
                            "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
@@ -81,7 +81,7 @@ async def name(ctx, name):
             await member.edit(nick=row[0] + " | " + name)
             async with pool.acquire() as conn:
                 await conn.execute('UPDATE members SET firstname = $1 WHERE discord_id = $2', name, ctx.author.id)
-            await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + ctx.author.nick + "`")
+            await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + member.nick + "`")
         else:
             await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
                            "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
