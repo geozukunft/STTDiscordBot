@@ -55,6 +55,7 @@ async def generaterules(ctx):
         await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "RULES")
     print("test")
 
+
 @commands.command(name='generatelanes', hidden=True)
 @commands.has_role('Social Media Manager')
 async def generatelanes(ctx):
@@ -86,6 +87,7 @@ async def generatemain(ctx):
     async with pool.acquire() as conn:
         await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "MAINLANE")
 
+
 @commands.command(name='generateroles', hidden=True)
 @commands.has_role('Social Media Manager')
 async def generateroles(ctx):
@@ -106,5 +108,3 @@ async def listemojis(ctx):
         await ctx.send(emoji.name + " " + str(emoji.id))
         await ctx.send(emoji)
     return
-
-
