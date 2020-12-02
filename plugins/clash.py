@@ -123,8 +123,8 @@ async def getclash(ctx, *args):
 
             async with pool.acquire() as conn:
                 await conn.execute('INSERT INTO reactions(message_id, type) VALUES ($1, $2)', message.id, "CLASH")
-                await conn.execute('UPDATE clash_events SET event_times = $1 , "announceMessageId" = $2 '
-                                   'WHERE id = $3', event_times_unix, message.id, event['id'])
+                await conn.execute('UPDATE clash_events SET event_times = $1 , "announceMessageId" = $2, announced = '
+                                   'True WHERE id = $3', event_times_unix, message.id, event['id'])
 
         else:
             await ctx.send("Bitte stelle sicher an erster Stelle die ID des Clash Events das du erstellen möchtest "

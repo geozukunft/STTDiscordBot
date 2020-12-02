@@ -17,6 +17,8 @@ def setup(bot):
     bot.add_command(generaterules)
     bot.add_command(generatelanes)
     bot.add_command(generatemain)
+    bot.add_command(generateroles)
+    bot.add_command(listemojis)
 
 
 @commands.command(name='list', hidden=True)
@@ -84,21 +86,25 @@ async def generatemain(ctx):
     async with pool.acquire() as conn:
         await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "MAINLANE")
 
-
-"""
-@commands.command(name='ign', help='Update deinen ingame namen')
-@commands.dm_only()
-@commands.has_role('Schildkröte')
-async def ign(ctx, ign):
+@commands.command(name='generateroles', hidden=True)
+@commands.has_role('Social Media Manager')
+async def generateroles(ctx):
     pool = ctx.bot.pool
+    message = await ctx.send('Reagiere bitte auf diese Nachricht wenn du bei Organisierten Clash Events teilnehmen '
+                             'möchtest. \n**Wichtig du musst dazu bereits einen verknüpften und auch verifzierten '
+                             'League Account haben!**')
+    await message.add_reaction('<:clash:783486810760282193>')
 
     async with pool.acquire() as conn:
-        row = await conn.fetchrow('SELECT firstname FROM playerdata WHERE idplayer = $1', ctx.author.id)
-    if row is not None:
-        await ctx.author.edit(nick=ign + " | " + row[0])
-        async with pool.acquire() as conn:
-            await conn.execute('UPDATE playerdata SET gametag = $1 WHERE idplayer = $2', ign, ctx.author.id)
-        await ctx.send("Dein Nickname sieht nun folgendermaßen aus: `" + ctx.author.nick + "`")
-    else:
-        await ctx.send("Du scheinst noch nicht registriert zu sein bitte tu dies zuerst mit !register")
-"""
+        await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "ROLES")
+
+
+@commands.command(name='listemojis', hidden=True)
+@commands.has_role('Social Media Manager')
+async def listemojis(ctx):
+    for emoji in ctx.guild.emojis:
+        await ctx.send(emoji.name + " " + str(emoji.id))
+        await ctx.send(emoji)
+    return
+
+

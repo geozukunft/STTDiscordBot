@@ -9,9 +9,6 @@ import discord.utils
 from discord.utils import get
 import os
 
-
-
-
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
 my_region = Tokens.LOL_REGION
@@ -41,6 +38,8 @@ async def newreaction(reaction):
         reactionmessage = await conn.fetchrow('SELECT type, discord_id FROM reactions WHERE message_id = $1',
                                               reaction.message_id)
         user = await conn.fetchrow('SELECT firstname FROM members WHERE discord_id = $1', reaction.user_id)
+        league_player = await conn.fetchrow(
+            'SELECT "summonerName" FROM leaguesummoner WHERE discord_id = $1 AND verified = True', reaction.user_id)
 
     if reactionmessage is not None:
         if reactionmessage['type'] == "RULES":
@@ -57,11 +56,28 @@ async def newreaction(reaction):
                                                "wird Ändern dieser ist Standardmäßig dein Discord Username. \n "
                                                "Mit !name kannst du einen Namen angeben der neben deinem Ingame Namen "
                                                "angezeigt wird. Dies kann dein Vorname sein oder wie auch immer du "
-                                               "gennant werden möchtest.")
+                                               "gennant werden möchtest.\n\n"
+                                               "Wenn du LoL Spieler bist und bei Turnieren mitspielen möchtest oder "
+                                               "auch Spieler für das nächste Clash Turnier suchst dann füge einfach "
+                                               "einen deiner LoL Accounts (du kannst auch mehrere hinzufügen solltest "
+                                               "du Smurfs haben) mit `!addlol <ingamename>` deinen Account hinzu. "
+                                               "Dies hilft uns dabei dich bei Turnieren in einfacher in Lobbys "
+                                               "einladen zu können bzw. bei Clash Teams auf dem gleichen Spielniveu "
+                                               "zusammenzustellen. Solltest du auch zu ebensolchen Clash Teams "
+                                               "zugeteilt werden können verifiziere deinen Account nach dem "
+                                               "hinzufügen. Näheres Teile ich dir nach dem hinzufügen mit.")
                 async with pool.acquire() as conn:
-                    await conn.execute('INSERT INTO audit_log(discord_id, action_type, timestamp) VALUES ($1, $2, $3)', reaction.member.id, "ACCEPT_RULES", currenttime)
+                    await conn.execute('INSERT INTO audit_log(discord_id, action_type, timestamp) VALUES ($1, $2, $3)',
+                                       reaction.member.id, "ACCEPT_RULES", currenttime)
+            else:
+                async with pool.acquire() as conn:
+                    await conn.execute(
+                        "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                        "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                        reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
         elif reactionmessage['type'] == "LANES":
+            valid: bool = False  # Flag if emoji is a valid one for this message type
             if user is not None:
                 if reaction.emoji.name == "TopLane":
                     async with pool.acquire() as conn:
@@ -83,64 +99,113 @@ async def newreaction(reaction):
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET sup = True WHERE discord_id = $1',
                                            reaction.member.id)
+                if not valid:
+                    async with pool.acquire() as conn:
+                        await conn.execute(
+                            "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                            "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                            reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
+
             else:
                 async with pool.acquire() as conn:
                     await conn.execute(
-                        "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, channel_id)"
-                        "VALUES ($1,$2,$3,$4)", reaction.user_id, reaction.message_id,
-                        reaction.emoji.id, reaction.channel_id)
+                        "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                        "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                        reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
         elif reactionmessage['type'] == "CLASH":
-            return
+            if league_player is not None:
+                emoji_to_number = {
+                    '1️⃣': 0,
+                    '2️⃣': 1,
+                    '3️⃣': 2,
+                    '4️⃣': 3,
+                    '5️⃣': 4,
+                    '6️⃣': 5,
+                    '7️⃣': 6,
+                    '8️⃣': 7,
+                    '9️⃣': 8,
+                    '🔟': 9
+                }
+                number = emoji_to_number.get(reaction.emoji.name, 10)
+                async with pool.acquire() as conn:
+                    event = await conn.fetchrow(
+                        'SELECT event_times, id FROM clash_events WHERE "announceMessageId" = $1 AND ended = False',
+                        reaction.message_id)
+                if event is not None:
+                    times = len(event['event_times'])
+                    if number < times:
+                        async with pool.acquire() as conn:
+                            await conn.execute(
+                                'INSERT INTO clash_participation(clash_id, "participationTime", discord_id) '
+                                'VALUES ($1, $2, $3)', event['id'], event['event_times'][number], reaction.user_id)
+                    else:
+                        async with pool.acquire() as conn:
+                            await conn.execute(
+                                "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                                "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                                reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
+
         elif reactionmessage['type'] == "MAINLANE":
+            valid: bool = False  # Flag if emoji is a valid one for this message type
             if user is not None:
                 if reaction.emoji.name == "TopLane":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET main = $1 WHERE discord_id = $2', "TOP",
                                            reaction.member.id)
 
                 elif reaction.emoji.name == "Jungle":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET main = $1 WHERE discord_id = $2', "JGL",
                                            reaction.member.id)
 
                 elif reaction.emoji.name == "MidLane":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET main = $1 WHERE discord_id = $2', "MID",
                                            reaction.member.id)
 
                 elif reaction.emoji.name == "BotLane":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET main = $1 WHERE discord_id = $2', "BOT",
                                            reaction.member.id)
 
                 elif reaction.emoji.name == "Support":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET main = $1 WHERE discord_id = $2', "SUP",
                                            reaction.member.id)
-
-                async with pool.acquire() as conn:
-                    await conn.execute(
-                        'INSERT INTO reaction_history(discord_id, message_id, emoji_id, channel_id, timestamp) '
-                        'VALUES ($1,$2,$3,$4,$5)',
-                        reaction.user_id, reaction.message_id, reaction.emoji.id, reaction.channel_id,
-                        currenttime)
-                    results = await conn.fetch(
-                        "SELECT * FROM reaction_history WHERE discord_id = $1 AND message_id = $2 "
-                        "ORDER BY unique_id DESC", reaction.user_id, reaction.message_id)
-                    if len(results) > 1:
-                        to_delete = results[1]
+                if valid:
+                    async with pool.acquire() as conn:
                         await conn.execute(
-                            "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, channel_id)"
-                            "VALUES ($1,$2,$3,$4)", to_delete['discord_id'], to_delete['message_id'],
-                            to_delete['emoji_id'], to_delete['channel_id'])
+                            'INSERT INTO reaction_history(discord_id, message_id, emoji_id, channel_id, timestamp) '
+                            'VALUES ($1,$2,$3,$4,$5)',
+                            reaction.user_id, reaction.message_id, reaction.emoji.id, reaction.channel_id,
+                            currenttime)
+                        results = await conn.fetch(
+                            "SELECT * FROM reaction_history WHERE discord_id = $1 AND message_id = $2 "
+                            "ORDER BY unique_id DESC", reaction.user_id, reaction.message_id)
+                        if len(results) > 1:
+                            to_delete = results[1]
+                            await conn.execute(
+                                "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, channel_id)"
+                                "VALUES ($1,$2,$3,$4)", to_delete['discord_id'], to_delete['message_id'],
+                                to_delete['emoji_id'], to_delete['channel_id'])
+                else:
+                    async with pool.acquire() as conn:
+                        await conn.execute(
+                            "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                            "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                            reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
             else:
                 async with pool.acquire() as conn:
                     await conn.execute(
-                        "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, channel_id)"
-                        "VALUES ($1,$2,$3,$4)", reaction.user_id, reaction.message_id,
-                        reaction.emoji.id, reaction.channel_id)
-
+                        "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                        "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                        reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
 
 """
@@ -216,12 +281,15 @@ async def removereaction(reaction):
         reactionmessage = await conn.fetchrow('SELECT type, discord_id FROM reactions WHERE message_id = $1',
                                               reaction.message_id)
         user = await conn.fetchrow('SELECT firstname FROM members WHERE discord_id = $1', reaction.user_id)
+        league_player = await conn.fetchrow(
+            'SELECT "summonerName" FROM leaguesummoner WHERE discord_id = $1 AND verified = True', reaction.user_id)
 
     if reactionmessage is not None:
         if reactionmessage['type'] == "RULES":
             if reaction.emoji.name == "✅":
                 async with pool.acquire() as conn:
-                    await conn.execute('INSERT INTO audit_log(discord_id, action_type, timestamp) VALUES ($1, $2, $3)', reaction.user_id, "DENY_RULES", currenttime)
+                    await conn.execute('INSERT INTO audit_log(discord_id, action_type, timestamp) VALUES ($1, $2, $3)',
+                                       reaction.user_id, "DENY_RULES", currenttime)
 
         elif reactionmessage['type'] == "LANES":
             if user is not None:
@@ -247,7 +315,37 @@ async def removereaction(reaction):
                                            reaction.user_id)
 
         elif reactionmessage['type'] == "CLASH":
-            return
+            if league_player is not None:
+                emoji_to_number = {
+                    '1️⃣': 0,
+                    '2️⃣': 1,
+                    '3️⃣': 2,
+                    '4️⃣': 3,
+                    '5️⃣': 4,
+                    '6️⃣': 5,
+                    '7️⃣': 6,
+                    '8️⃣': 7,
+                    '9️⃣': 8,
+                    '🔟': 9
+                }
+                number = emoji_to_number.get(reaction.emoji.name, 10)
+                async with pool.acquire() as conn:
+                    event = await conn.fetchrow(
+                        'SELECT event_times, id FROM clash_events WHERE "announceMessageId" = $1 AND ended = False',
+                        reaction.message_id)
+                if event is not None:
+                    times = len(event['event_times'])
+                    if number < times:
+                        async with pool.acquire() as conn:
+                            await conn.execute(
+                                'DELETE FROM clash_participation WHERE clash_id = $1 AND "participationTime" = $2 AND discord_id = $3',
+                            event['id'], event['event_times'][number], reaction.user_id)
+                    else:
+                        async with pool.acquire() as conn:
+                            await conn.execute(
+                                "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                                "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                                reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
         elif reactionmessage['type'] == "MAINLANE":
             if user is not None:

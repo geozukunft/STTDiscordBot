@@ -15,31 +15,76 @@ def __init__(self, bot):
 
 
 def setup(bot):
-    bot.add_command(register)
+    bot.add_command(ign)
+    bot.add_command(name)
 
 
-@commands.command(name='register', help='Registriere dich im Spielerverzeichniss')
+
+@commands.command(name='ign', help='Update deinen User/Ingamenamen')
 @commands.dm_only()
-async def register(ctx):
+async def ign(ctx, ign):
     pool = ctx.bot.pool
 
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow('SELECT * FROM "playerdata" WHERE "idplayer" = $1', ctx.author.id)
-    if row is None:
-        if ctx.author.nick is not None:
-            name = re.findall(r"(\w+)", ctx.author.nick)
-            if name is not None:
-                async with pool.acquire() as conn:
-                    await conn.execute('INSERT INTO playerdata VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-                                       ctx.author.id, name[1], name[0], False, False, False, False, False, "k.A.")
-                await ctx.send("Du bist nun Registriert du kannst nun mit !main deine Main Lane eintragen "
-                               "oder mit !top, !jgl usw. eintragen welche Lanes du Spielen kannst")
-            else:
-                await ctx.send("Du hast auf dem STT Discord noch keinen Nickname nach dem Format `vorname | "
-                               "ingamename` bitte richte diesen zuerst ein bevor du dich registrierst")
-        else:
-            await ctx.send("Du scheinst von den Admins noch keinen Nicknamen bekommen zu haben. Bitte wende "
-                           "dich an einen STT Admin.")
-    else:
-        await ctx.send("Du bist bereits Registriert um deinen IGN zu ändern benutze bitte !ign INGAMENAME")
+    schildkroete = False
+    for guild in ctx.bot.guilds:
+        if guild.id == GUILD:
+            break
 
+    user = ctx.message.author
+
+    for member in guild.members:
+        if member.id == user.id:
+            break
+    for role in member.roles:
+        if role.name == "Schildkröte":
+            schildkroete = True
+
+
+    if schildkroete is True:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow('SELECT firstname FROM members WHERE discord_id = $1', ctx.author.id)
+        if row is not None:
+            await member.edit(nick=ign + " | " + row[0])
+            async with pool.acquire() as conn:
+                await conn.execute('UPDATE members SET username = $1 WHERE discord_id = $2', ign, ctx.author.id)
+            await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + ctx.author.nick + "`")
+        else:
+            await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
+                           "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
+    else:
+        await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
+                       "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
+
+@commands.command(name='name', help='Update deinen Vor/Rufnamen')
+@commands.dm_only()
+async def name(ctx, name):
+    pool = ctx.bot.pool
+
+    schildkroete = False
+    for guild in ctx.bot.guilds:
+        if guild.id == GUILD:
+            break
+
+    user = ctx.message.author
+
+    for member in guild.members:
+        if member.id == user.id:
+            break
+    for role in member.roles:
+        if role.name == "Schildkröte":
+            schildkroete = True
+
+    if schildkroete is True:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow('SELECT username FROM members WHERE discord_id = $1', ctx.author.id)
+        if row is not None:
+            await member.edit(nick=row[0] + " | " + name)
+            async with pool.acquire() as conn:
+                await conn.execute('UPDATE members SET firstname = $1 WHERE discord_id = $2', name, ctx.author.id)
+            await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + ctx.author.nick + "`")
+        else:
+            await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
+                           "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
+    else:
+        await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
+                       "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")

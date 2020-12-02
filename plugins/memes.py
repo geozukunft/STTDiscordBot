@@ -30,3 +30,4 @@ async def schmidi(ctx):
 @commands.command(name='gott', hidden=True)
 async def gott(ctx):
     await ctx.send("Meintest du womöglich `!schmidi`?")
+
