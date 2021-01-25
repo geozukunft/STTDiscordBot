@@ -23,6 +23,7 @@ logger.addHandler(handler)
 # Config aus .env einlesen.
 load_dotenv()
 
+
 startup_extensions = ["clash", "general", "league", "memes", "users", "reaction"]
 
 
