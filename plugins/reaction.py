@@ -1,13 +1,13 @@
-from discord import reaction, Client
-from discord.ext import commands
-from datetime import date, datetime
-import locale
-from main import Tokens
-from asyncpg.pool import Pool
+import time
+import uuid
+from datetime import datetime
+from datetime import timedelta as td
+
 import asyncpg
-import discord.utils
-from discord.utils import get
-import os
+from asyncpg.pool import Pool
+from pyot.models import lol
+
+from main import Tokens
 
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
@@ -80,22 +80,27 @@ async def newreaction(reaction):
             valid: bool = False  # Flag if emoji is a valid one for this message type
             if user is not None:
                 if reaction.emoji.name == "TopLane":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET top = True WHERE discord_id = $1',
                                            reaction.member.id)
                 elif reaction.emoji.name == "Jungle":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET jgl = True WHERE discord_id = $1',
                                            reaction.member.id)
                 elif reaction.emoji.name == "MidLane":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET mid = True WHERE discord_id = $1',
                                            reaction.member.id)
                 elif reaction.emoji.name == "BotLane":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET adc = True WHERE discord_id = $1',
                                            reaction.member.id)
                 elif reaction.emoji.name == "Support":
+                    valid = True
                     async with pool.acquire() as conn:
                         await conn.execute('UPDATE league_player SET sup = True WHERE discord_id = $1',
                                            reaction.member.id)
@@ -190,10 +195,11 @@ async def newreaction(reaction):
                             "ORDER BY unique_id DESC", reaction.user_id, reaction.message_id)
                         if len(results) > 1:
                             to_delete = results[1]
-                            await conn.execute(
-                                "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, channel_id)"
-                                "VALUES ($1,$2,$3,$4)", to_delete['discord_id'], to_delete['message_id'],
-                                to_delete['emoji_id'], to_delete['channel_id'])
+                            if to_delete['emoji_id'] != reaction.emoji.id:
+                                await conn.execute(
+                                    "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, channel_id)"
+                                    "VALUES ($1,$2,$3,$4)", to_delete['discord_id'], to_delete['message_id'],
+                                    to_delete['emoji_id'], to_delete['channel_id'])
                 else:
                     async with pool.acquire() as conn:
                         await conn.execute(
@@ -207,70 +213,59 @@ async def newreaction(reaction):
                         "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
                         reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
+        elif reactionmessage['type'] == "VERIFY":
+            if user is not None:
+                if reaction.emoji.name == "✅":
+                    async with pool.acquire() as conn:
+                        verifyrequest = await conn.fetchrow(
+                            'SELECT * FROM verify WHERE discord_id = $1 AND successful is Null', reaction.user_id)
+                        delta = datetime.now() - verifyrequest['creation']
+                        if delta > td(seconds=2):
+                            summoner = await conn.fetchrow(
+                                'SELECT "summonerID", "summonerName" FROM leaguesummoner WHERE puuid = $1',
+                                verifyrequest['puuid'])
+                            code = await lol.ThirdPartyCode(summoner['summonerID'], verifyrequest['region']).get()
+                            if verifyrequest['code'] == uuid.UUID(code.code):
+                                await conn.execute('UPDATE leaguesummoner SET verified = True WHERE puuid = $1',
+                                                   verifyrequest['puuid'])
+                                await conn.execute(
+                                    'INSERT INTO message_to_send(discord_id, message_type_id, "summonerName") VALUES ($1,$2,$3)',
+                                    reaction.user_id, 0, summoner['summonerName'])
+                            else:
+                                await conn.execute('INSERT INTO message_to_send(discord_id, message_type_id) VALUES ($1,$2)',
+                                                   reaction.user_id, 1)
+                        else:
+                            print("The bot tried to verify itself LOL")
 
-"""
-    async with pool.acquire() as conn:
-        event = await conn.fetchrow('SELECT * FROM clashdata WHERE "announceMessageID" = $1',
-                                    reaction.message_id)
-        player = await conn.fetchrow('SELECT "regnum" FROM playerdata WHERE "idplayer" = $1', reaction.user_id)
-        stream = await conn.fetchrow('SELECT * FROM clashdata WHERE "streamMessageID" = $1', reaction.message_id)
-        registerd = await conn.fetchrow('SELECT * FROM clashplayerdata WHERE idplayer = $1', reaction.user_id)
+        elif reactionmessage['type'] == "ROLES":
+            valid: bool = False  # Flag if emoji is a valid one for this message type
+            if user is not None:
+                if reaction.emoji.name == "clash":
 
-    if event is not None and player is not None and event['ended'] is False:
+                    if league_player:
+                        valid = True
+                        async with pool.acquire() as conn:
+                            await conn.execute('INSERT INTO role_assign VALUES ($1,$2)', reaction.user_id, "Clash")
+                    else:
+                        await reaction.member.send("Du kannst dich leider noch nicht für Organisierte Clash Events "
+                                                   "anmelden da du noch keinen verifizierten League Account bei mir "
+                                                   "hinzugefügt hast. Du kannst den Status deiner League Accounts mit "
+                                                   "!listlol überprüfen. Falls du noch gar keine Accounts hast kannst "
+                                                   "du diese mit !addlol hinzufügen.")
 
-        epochtime = event['registrationTime']
-        d = date.fromtimestamp(epochtime / 1000)
-        locale.setlocale(locale.LC_TIME, "de-DE")
-        day = d.strftime('%A')
+                if not valid:
+                    async with pool.acquire() as conn:
+                        await conn.execute(
+                            "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                            "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                            reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
-        if registerd is not None:
-            if reaction.emoji.name == "1️⃣":
-                if day == 'Samstag':
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE clashplayerdata SET day1time1 = True WHERE idplayer = $1',
-                                           reaction.user_id)
-                elif day == 'Sonntag':
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE clashplayerdata SET day2time1 = True WHERE idplayer = $1',
-                                           reaction.user_id)
-            elif reaction.emoji.name == "2️⃣":
-                if day == 'Samstag':
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE clashplayerdata SET day1time2 = True WHERE idplayer = $1',
-                                           reaction.user_id)
-                elif day == 'Sonntag':
-                    async with pool.acquire() as conn:
-                        await conn.execute('UPDATE clashplayerdata SET day2time2 = True WHERE idplayer = $1',
-                                           reaction.user_id)
-
-        else:
-            if reaction.emoji.name == "1️⃣":
-                if day == 'Samstag':
-                    async with pool.acquire() as conn:
-                        await conn.execute('INSERT INTO clashplayerdata (idplayer, day1time1, regnum) VALUES '
-                                           '($1, True, $2) ', reaction.user_id, player['regnum'])
-                elif day == 'Sonntag':
-                    async with pool.acquire() as conn:
-                        await conn.execute('INSERT INTO clashplayerdata (idplayer, day2time1, regnum) VALUES '
-                                           '($1, True, $2) ', reaction.user_id, player['regnum'])
-            elif reaction.emoji.name == "2️⃣":
-                if day == 'Samstag':
-                    async with pool.acquire() as conn:
-                        await conn.execute('INSERT INTO clashplayerdata (idplayer, day1time2, regnum) VALUES '
-                                           '($1, True, $2) ', reaction.user_id, player['regnum'])
-                elif day == 'Sonntag':
-                    async with pool.acquire() as conn:
-                        await conn.execute('INSERT INTO clashplayerdata (idplayer, day2time2, regnum) VALUES '
-                                           '($1, True, $2) ', reaction.user_id, player['regnum'])
-
-    if stream is not None and player is not None and stream['ended'] is False and registerd is not None:
-
-        for role in reaction.member.roles:
-            if role.name == "Streamer":
+            else:
                 async with pool.acquire() as conn:
-                    await conn.execute('UPDATE clashplayerdata SET streaming = True WHERE idplayer = $1',
-                                       reaction.user_id)
-"""
+                    await conn.execute(
+                        "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                        "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                        reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
 
 async def removereaction(reaction):
@@ -339,7 +334,7 @@ async def removereaction(reaction):
                         async with pool.acquire() as conn:
                             await conn.execute(
                                 'DELETE FROM clash_participation WHERE clash_id = $1 AND "participationTime" = $2 AND discord_id = $3',
-                            event['id'], event['event_times'][number], reaction.user_id)
+                                event['id'], event['event_times'][number], reaction.user_id)
                     else:
                         async with pool.acquire() as conn:
                             await conn.execute(

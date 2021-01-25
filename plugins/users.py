@@ -84,7 +84,7 @@ async def name(ctx, name):
             await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + member.nick + "`")
         else:
             await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
-                           "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
+                           "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605!")
     else:
         await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
                        "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")

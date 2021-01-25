@@ -1,5 +1,7 @@
 from discord.ext import commands
 from discord.utils import get
+import asyncio
+import time
 
 from main import Tokens
 
@@ -17,7 +19,7 @@ def setup(bot):
     bot.add_command(generaterules)
     bot.add_command(generatelanes)
     bot.add_command(generatemain)
-    bot.add_command(generateroles)
+    bot.add_command(generateclash)
     bot.add_command(listemojis)
 
 
@@ -51,6 +53,8 @@ async def generaterules(ctx):
                              "Mit der Reaktion auf die Nachricht treten sie sämtliche Rechte ihres Lebens ab.")
     await message.add_reaction('✅')
 
+    await asyncio.sleep(2)
+
     async with pool.acquire() as conn:
         await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "RULES")
     print("test")
@@ -68,6 +72,8 @@ async def generatelanes(ctx):
     await message.add_reaction('<:BotLane:777326001877286922>')
     await message.add_reaction('<:Support:777326002061180928>')
 
+    await asyncio.sleep(2)
+
     async with pool.acquire() as conn:
         await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "LANES")
 
@@ -84,18 +90,22 @@ async def generatemain(ctx):
     await message.add_reaction('<:BotLane:777326001877286922>')
     await message.add_reaction('<:Support:777326002061180928>')
 
+    await asyncio.sleep(2)
+
     async with pool.acquire() as conn:
         await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "MAINLANE")
 
 
-@commands.command(name='generateroles', hidden=True)
+@commands.command(name='generateclash', hidden=True)
 @commands.has_role('Social Media Manager')
-async def generateroles(ctx):
+async def generateclash(ctx):
     pool = ctx.bot.pool
     message = await ctx.send('Reagiere bitte auf diese Nachricht wenn du bei Organisierten Clash Events teilnehmen '
                              'möchtest. \n**Wichtig du musst dazu bereits einen verknüpften und auch verifzierten '
                              'League Account haben!**')
     await message.add_reaction('<:clash:783486810760282193>')
+
+    await asyncio.sleep(2)
 
     async with pool.acquire() as conn:
         await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "ROLES")

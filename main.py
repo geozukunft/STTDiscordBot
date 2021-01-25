@@ -5,7 +5,6 @@ from asyncpg.pool import Pool
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 import discord
-from riotwatcher import LolWatcher, ApiError
 from pyot.core import Settings
 import builtins
 
@@ -41,7 +40,6 @@ class Tokens:
 
 
 # Variablen assignen
-watcher = LolWatcher(Tokens.RIOT_TOKEN)
 pool: Pool = "eule"
 
 intents = discord.Intents.default()
@@ -105,7 +103,7 @@ async def main():
         )
         members = '\n - '.join([member.name for member in guild.members])
         print(f'Guild Members:\n - {members}')
-        ignored = ["__init__"]
+        ignored = ["__init__", "league"]
         extensions = [x for x in [os.path.splitext(filename)[0] for filename in os.listdir('./plugins')] if
                       x not in ignored]
 
@@ -159,12 +157,7 @@ async def main():
         if isinstance(error, commands.errors.MissingRole):
             await ctx.send('Du hast für diesen Befehl nicht genügend Rechte!')
         if isinstance(error, commands.UserInputError):
-            if error.param.name == "ign":
-                await ctx.send('Scheint als hättest du keinen Ingamenamen mit angegeben bitte stelle sicher das du '
-                               'den Command folgendermaßen benutzt: `!ign INGAMENAME`')
-            elif error.param.name == "lane":
-                await ctx.send('Du scheinst vergessen haben deine Hauptlane anzugeben vergiss nicht diese sind '
-                               'folgende: `top, jgl, mid, bot, sup`')
+            pass
         if isinstance(error, commands.ExtensionAlreadyLoaded):
             await ctx.send('Module already loaded')
         print(error)
