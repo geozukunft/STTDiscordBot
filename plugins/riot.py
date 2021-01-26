@@ -272,7 +272,9 @@ async def listlolacc(ctx):
                     i += 1
             await ctx.send(content=None, embed=embed)
 
-@commands.command(name='changemain', help="Mit diesem Befehl kannst du deinen Haupt League Account ändern! !changemain <accountname>")
+
+@commands.command(name='changemain', help="Mit diesem Befehl kannst du deinen Haupt League Account ändern! "
+                                          "!changemain <accountname>")
 @commands.dm_only()
 async def changemainlolacc(ctx, *, summonername):
     pool = ctx.bot.pool
@@ -329,7 +331,8 @@ async def changemainlolacc(ctx, *, summonername):
             await ctx.send("Der von dir eingebene Account existiert bei mir nicht. Bitte überprüfe deine Eingabe!")
 
 
-@commands.command(name='cl', alias=('clashlist', 'players'))
+@commands.command(name='cl', alias=('clashlist', 'players'), help="Gibt die Links zu deinen Gegenerischen Clash Teams")
+@commands.has_any_role('Admin', 'Social Media Manager')
 async def clashplayers(ctx, *, summonername):
     playernames = []
     summoner = await lol.Summoner(name=summonername, platform="EUW1").get()
