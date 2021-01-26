@@ -1,6 +1,4 @@
 from discord.ext import commands
-from asyncpg.pool import Pool
-import re
 
 from main import Tokens
 
@@ -20,9 +18,10 @@ def setup(bot):
 
 @commands.command(name='ign', help='Update deinen User/Ingamenamen')
 @commands.dm_only()
-async def ign(ctx, ign):
+async def ign(ctx, igninput):
     pool = ctx.bot.pool
-
+    guild = ""
+    member = ""
     schildkroete = False
     for guild in ctx.bot.guilds:
         if guild.id == GUILD:
@@ -41,13 +40,14 @@ async def ign(ctx, ign):
         async with pool.acquire() as conn:
             row = await conn.fetchrow('SELECT firstname FROM members WHERE discord_id = $1', ctx.author.id)
         if row is not None:
-            await member.edit(nick=ign + " | " + row[0])
+            await member.edit(nick=igninput + " | " + row[0])
             async with pool.acquire() as conn:
                 await conn.execute('UPDATE members SET username = $1 WHERE discord_id = $2', ign, ctx.author.id)
             await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + member.nick + "`")
         else:
             await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
-                           "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
+                           "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT "
+                           "Discord!")
     else:
         await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
                        "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
@@ -55,9 +55,10 @@ async def ign(ctx, ign):
 
 @commands.command(name='name', help='Update deinen Vor/Rufnamen')
 @commands.dm_only()
-async def name(ctx, name):
+async def name(ctx, nameinput):
     pool = ctx.bot.pool
-
+    guild = ""
+    member = ""
     schildkroete = False
     for guild in ctx.bot.guilds:
         if guild.id == GUILD:
@@ -76,7 +77,7 @@ async def name(ctx, name):
         async with pool.acquire() as conn:
             row = await conn.fetchrow('SELECT username FROM members WHERE discord_id = $1', ctx.author.id)
         if row is not None:
-            await member.edit(nick=row[0] + " | " + name)
+            await member.edit(nick=row[0] + " | " + nameinput)
             async with pool.acquire() as conn:
                 await conn.execute('UPDATE members SET firstname = $1 WHERE discord_id = $2', name, ctx.author.id)
             await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + member.nick + "`")

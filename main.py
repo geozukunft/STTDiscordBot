@@ -1,18 +1,13 @@
-import os
-import logging
-
-from asyncpg.pool import Pool
-from dotenv import load_dotenv
-from discord.ext import commands, tasks
-import discord
-from pyot.core import Settings
-import builtins
-
-from pyot.models import lol
-from pyot.utils import loop_run
-
 import asyncio
+import logging
+import os
+
 import asyncpg
+import discord
+from asyncpg.pool import Pool
+from discord.ext import commands
+from dotenv import load_dotenv
+from pyot.core import Settings
 
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
@@ -40,6 +35,7 @@ class Tokens:
 
 
 # Variablen assignen
+# noinspection PyTypeChecker
 pool: Pool = "eule"
 
 intents = discord.Intents.default()
@@ -86,6 +82,7 @@ async def main():
 
     @bot.event
     async def on_ready():
+        guild = ""
         for guild in bot.guilds:
             if guild.id == Tokens.GUILD:
                 break

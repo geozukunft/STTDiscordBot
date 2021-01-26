@@ -1,4 +1,3 @@
-import time
 import uuid
 from datetime import datetime
 from datetime import timedelta as td
@@ -18,6 +17,7 @@ DB_HOST = Tokens.DB_HOST
 DB_NAME = Tokens.DB_NAME
 DB_PORT = Tokens.DB_PORT
 
+# noinspection PyTypeChecker
 pool: Pool = "eule"
 
 
@@ -147,7 +147,8 @@ async def newreaction(reaction):
                     else:
                         async with pool.acquire() as conn:
                             await conn.execute(
-                                "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                                "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, "
+                                "channel_id)"
                                 "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
                                 reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
@@ -229,11 +230,11 @@ async def newreaction(reaction):
                                 await conn.execute('UPDATE leaguesummoner SET verified = True WHERE puuid = $1',
                                                    verifyrequest['puuid'])
                                 await conn.execute(
-                                    'INSERT INTO message_to_send(discord_id, message_type_id, "summonerName") VALUES ($1,$2,$3)',
-                                    reaction.user_id, 0, summoner['summonerName'])
+                                    'INSERT INTO message_to_send(discord_id, message_type_id, "summonerName") VALUES '
+                                    '($1,$2,$3)', reaction.user_id, 0, summoner['summonerName'])
                             else:
-                                await conn.execute('INSERT INTO message_to_send(discord_id, message_type_id) VALUES ($1,$2)',
-                                                   reaction.user_id, 1)
+                                await conn.execute('INSERT INTO message_to_send(discord_id, message_type_id) VALUES '
+                                                   '($1,$2)', reaction.user_id, 1)
                         else:
                             print("The bot tried to verify itself LOL")
 
@@ -333,13 +334,13 @@ async def removereaction(reaction):
                     if number < times:
                         async with pool.acquire() as conn:
                             await conn.execute(
-                                'DELETE FROM clash_participation WHERE clash_id = $1 AND "participationTime" = $2 AND discord_id = $3',
-                                event['id'], event['event_times'][number], reaction.user_id)
+                                'DELETE FROM clash_participation WHERE clash_id = $1 AND "participationTime" = $2 AND '
+                                'discord_id = $3', event['id'], event['event_times'][number], reaction.user_id)
                     else:
                         async with pool.acquire() as conn:
                             await conn.execute(
-                                "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
-                                "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                                "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, "
+                                "channel_id) VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
                                 reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
         elif reactionmessage['type'] == "MAINLANE":

@@ -4,3 +4,4 @@ asyncpg~=0.21.0
 pandas~=1.1.2
 pyot~=3.0.1
 discord~=1.0.1
+python-dateutil~=2.8.1

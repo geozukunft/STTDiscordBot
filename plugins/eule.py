@@ -16,11 +16,12 @@ async def roll(ctx, dice: str):
     """Rolls a dice in NdN format."""
     try:
         rolls, limit = map(int, dice.split('d'))
-    except Exception:
+    except Exception as error:
+        print(error)
         await ctx.send('Format has to be in NdN!')
         return
 
-    result = ', '.join(str(random.randint(1, limit)) for r in range(rolls))
+    result = ', '.join(str(random.randint(1, limit)) for _ in range(rolls))
     await ctx.send(result)
 
 
@@ -28,5 +29,3 @@ async def roll(ctx, dice: str):
 async def choose(ctx, *choices: str):
     """Chooses between multiple choices."""
     await ctx.send(random.choice(choices))
-
-

@@ -1,7 +1,6 @@
-from discord.ext import commands
-from discord.utils import get
 import asyncio
-import time
+
+from discord.ext import commands
 
 from main import Tokens
 
@@ -27,11 +26,10 @@ def setup(bot):
 @commands.dm_only()
 @commands.is_owner()
 async def listmembers(ctx):
+    guild = ""
     for guild in ctx.bot.guilds:
         if guild.id == Tokens.GUILD:
             break
-
-    user = ctx.message.author
 
     for member in guild.members:
         for role in member.roles:
