@@ -49,7 +49,8 @@ async def generaterules(ctx):
                              "Stet clita kasd gubergren,\n"
                              "Zu Risiken und Nebenwirkungen lesen Sie die Packungsbeilage und fragen Sie Ihren Gott "
                              "oder Geo\n "
-                             "Mit der Reaktion auf die Nachricht treten sie sämtliche Rechte ihres Lebens ab.")
+                             "Mit der Reaktion auf die Nachricht treten sie sämtliche Rechte ihres Lebens ab.\n"
+                             "**Bitte macht alle Aufgaben danach die in #test-aufgaben stehen!**")
     await message.add_reaction('✅')
 
     await asyncio.sleep(2)
