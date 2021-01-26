@@ -1,10 +1,10 @@
 import datetime
-import time
 import uuid
 import discord
 from discord.ext import commands
 from discord.utils import get
 from pyot.models import lol
+import urllib.parse
 
 from main import Tokens
 
@@ -332,16 +332,21 @@ async def changemainlolacc(ctx, *, summonername):
 
 
 @commands.command(name='cl', alias=('clashlist', 'players'), help="Gibt die Links zu deinen Gegenerischen Clash Teams")
-@commands.has_any_role('Admin', 'Social Media Manager')
+@commands.has_any_role('Clash', 'Social Media Manager')
 async def clashplayers(ctx, *, summonername):
     playernames = []
-    summoner = await lol.Summoner(name=summonername, platform="EUW1").get()
-    clashplayer = await lol.ClashPlayers(summoner_id=summoner.id, platform="EUW1").get()
-    clashteam = await lol.ClashTeam(clashplayer.players[0].team_id, platform="EUW1").get()
-    for player in clashteam.players:
-        teamplayer = await lol.Summoner(id=player.summoner_id, platform="EUW1").get()
-        await ctx.send(f'{teamplayer.name} Rolle: {player.position}')
-        playernames.append((teamplayer.name))
+    try:
+        summoner = await lol.Summoner(name=summonername, platform="EUW1").get()
+        clashplayer = await lol.ClashPlayers(summoner_id=summoner.id, platform="EUW1").get()
+        clashteam = await lol.ClashTeam(clashplayer.players[0].team_id, platform="EUW1").get()
+        for player in clashteam.players:
+            teamplayer = await lol.Summoner(id=player.summoner_id, platform="EUW1").get()
+            await ctx.send(f'{teamplayer.name} Ausgewählte Rolle: {player.position}')
+            playernames.append((teamplayer.name.replace(" ", "")))
 
-    string = ','.join(playernames)
-    await ctx.send(f'`{string}`')
+        string = ','.join(playernames)
+        await ctx.send(f'`{string}`')
+        await ctx.send(f'https://euw.op.gg/multi/query={urllib.parse.quote(string)}')
+        await ctx.send(f'https://porofessor.gg/pregame/euw/{urllib.parse.quote(string)}')
+    except Exception as error:
+        await ctx.send("Es gab ein Problem beim Abrufen der Daten.")
