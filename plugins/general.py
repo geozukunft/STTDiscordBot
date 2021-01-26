@@ -15,7 +15,7 @@ def __init__(self, bot):
 
 
 def setup(bot):
-    bot.add_command(list)
+    bot.add_command(listmembers)
     bot.add_command(generaterules)
     bot.add_command(generatelanes)
     bot.add_command(generatemain)
@@ -25,7 +25,8 @@ def setup(bot):
 
 @commands.command(name='list', hidden=True)
 @commands.dm_only()
-async def list(ctx):
+@commands.is_owner()
+async def listmembers(ctx):
     for guild in ctx.bot.guilds:
         if guild.id == Tokens.GUILD:
             break
