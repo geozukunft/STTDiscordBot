@@ -6,6 +6,8 @@ from discord.utils import get
 from pyot.models import lol
 import urllib.parse
 
+from pyot.models.lol import SummonerLeague
+
 from main import Tokens
 
 TOKEN = Tokens.TOKEN
@@ -26,6 +28,7 @@ def setup(bot):
     bot.add_command(changemainlolacc)
 
 
+# noinspection PyBroadException,PyTypeChecker
 @commands.command(name='addlol',
                   help="Mit diesem Befehl kannst du einen League Account hinzufügen oder auch dessen Daten updaten ("
                        "Daten werden einmal täglich automatisch akuallisiert)! Achte hierbei auf eine korrekte "
@@ -36,9 +39,11 @@ async def addlolacc(ctx, *, summonername):
 
     try:
         summoner = await lol.Summoner(name=summonername, platform="EUW1").get()
-        summonerrank = await lol.SummonerLeague(summoner_id=summoner.id).get()
+        summonerrank: SummonerLeague = await lol.SummonerLeague(summoner_id=summoner.id).get()
     except Exception as error:
+        print(error)
         summoner = False
+        summonerrank = False
 
     tier: str = "UNRANKED"
     rank: str = ""
@@ -50,15 +55,17 @@ async def addlolacc(ctx, *, summonername):
                     rank = entry.rank
 
         async with pool.acquire() as conn:
-            lsummoner = await conn.fetchrow('SELECT "summonerName", "summonerLevel" FROM leaguesummoner WHERE puuid = $1',
-                                            summoner.puuid)
+            lsummoner = await conn.fetchrow(
+                'SELECT "summonerName", "summonerLevel" FROM leaguesummoner WHERE puuid = $1',
+                summoner.puuid)
             member = await conn.fetchrow('SELECT firstname FROM members WHERE discord_id = $1', ctx.author.id)
         if member:
             if lsummoner is not None:
                 async with pool.acquire() as conn:
-                    usummoner = await conn.execute(
+                    await conn.execute(
                         'UPDATE leaguesummoner SET "accountID" = $1, "summonerID" = $2, "summonerName" = $3, '
-                        '"profileIconId" = $4, "summonerLevel" = $5, "revisionDate" = $6, tier = $7, rank = $8 WHERE puuid = $9',
+                        '"profileIconId" = $4, "summonerLevel" = $5, "revisionDate" = $6, tier = $7, rank = $8 '
+                        'WHERE puuid = $9',
                         summoner.account_id, summoner.id, summoner.name, summoner.profile_icon_id, summoner.level,
                         summoner.revision_date.timestamp(), tier, rank, summoner.puuid)
                     await ctx.send(
@@ -97,8 +104,8 @@ async def addlolacc(ctx, *, summonername):
                             summoner.profile_icon_id, summoner.level,
                             summoner.revision_date.timestamp(), summoner.platform, False, tier, rank)
                         await ctx.send(
-                            f'Herzlichen Glückwunsch du hast einen weiteren League Account mit dem Namen {summoner.name} '
-                            f'hinzugefügt.\n '
+                            f'Herzlichen Glückwunsch du hast einen weiteren League Account mit dem Namen '
+                            f'{summoner.name} hinzugefügt.\n '
                             f'Du kannst mit `!addlol <ingamename>` auch noch weitere Accounts hinzufügen.\nMit '
                             f'`!changemain` kannst du sofern du weitere Accounts hinzufügst deinen primären Account '
                             f'ändern. \nMit `!verifylol <ingamename> kannst du einen Account verifzieren damit sich '
@@ -140,11 +147,10 @@ async def removelolacc(ctx, *, summonername):
             role_name = 'Clash'
             umember = get(ctx.bot.get_all_members(), id=user_id)
             await umember.remove_roles(get(umember.guild.roles, name=role_name))
-            role = get(umember.guild.roles, name=role_name)
             await ctx.send(f'Dein League Account {summonername} wurde soeben unwiederruflich aus dem System gelöscht.')
         else:
-            if lsummoner['PrimaryAcc'] == True:
-                if summoners[0]['verified'] == True:
+            if lsummoner['PrimaryAcc']:
+                if summoners[0]['verified']:
                     await conn.execute('DELETE FROM leaguesummoner WHERE puuid = $1', lsummoner['puuid'])
                     await conn.execute('UPDATE leaguesummoner SET "PrimaryAcc" = True WHERE puuid = $1',
                                        summoners[0]['puuid'])
@@ -195,26 +201,26 @@ async def removelolacc(ctx, *, summonername):
 async def verifylolacc(ctx, *, summonername):
     pool = ctx.bot.pool
 
-    summoner = await lol.Summoner(name=summonername, platform="EUW1").get()
-
     async with pool.acquire() as conn:
-        lsummoner = await conn.fetchrow('SELECT "summonerID", "region" , "discord_id", "puuid", verified FROM leaguesummoner '
-                                        'WHERE "summonerName" = $1 AND discord_id = $2', summonername, ctx.author.id)
+        lsummoner = await conn.fetchrow(
+            'SELECT "summonerID", "region" , "discord_id", "puuid", verified FROM leaguesummoner '
+            'WHERE "summonerName" = $1 AND discord_id = $2', summonername, ctx.author.id)
 
     if lsummoner:
         if not lsummoner['verified']:
             if lsummoner['discord_id'] == ctx.author.id:
                 verify_uuid = uuid.uuid4()
                 message = await ctx.send(
-                    f'Bitte öffne deinen League Client und gehe in die Einstellungen dort findest du relativ weit unten ein '
-                    f'Menü mit dem Namen Verifikation. Dort füge bitte folgenden Code ein\n`{verify_uuid}`\n und klicke auf '
-                    f'speichern. '
+                    f'Bitte öffne deinen League Client und gehe in die Einstellungen dort findest du relativ '
+                    f'weit unten ein '
+                    f'Menü mit dem Namen Verifikation. Dort füge bitte folgenden Code ein\n`{verify_uuid}`\n und '
+                    f'klicke auf speichern. '
                     f'Danach reagiere auf diese Nachricht mit ✅ damit ich deine Eingabe überprüfen kann.')
                 await message.add_reaction('✅')
-                # code = await lol.ThirdPartyCode(lsummoner['summonerID'], lsummoner['region']).get()
                 async with pool.acquire() as conn:
                     await conn.execute(
-                        'INSERT INTO verify(discord_id, puuid, region, creationtime, code, creation) VALUES($1,$2,$3,$4,$5,now())',
+                        'INSERT INTO verify(discord_id, puuid, region, creationtime, code, creation) '
+                        'VALUES($1,$2,$3,$4,$5,now())',
                         ctx.author.id, lsummoner['puuid'],
                         lsummoner['region'], datetime.datetime.utcnow().timestamp(), verify_uuid, )
                     await conn.execute('INSERT INTO reactions VALUES ($1,$2,$3)', message.id, "VERIFY", ctx.author.id)
@@ -235,7 +241,8 @@ async def listlolacc(ctx):
 
     async with pool.acquire() as conn:
         summoners = await conn.fetch(
-            'SELECT "summonerName", "profileIconId", "summonerLevel", "PrimaryAcc", verified, tier, rank FROM leaguesummoner WHERE discord_id = $1 ORDER BY "PrimaryAcc" DESC',
+            'SELECT "summonerName", "profileIconId", "summonerLevel", "PrimaryAcc", verified, tier, rank '
+            'FROM leaguesummoner WHERE discord_id = $1 ORDER BY "PrimaryAcc" DESC',
             ctx.author.id)
 
         if summoners is not None:
@@ -248,7 +255,8 @@ async def listlolacc(ctx):
             embed_desc = f'Dies sind deine registrierten League Accounts'
             embed = discord.Embed(title=embed_title, description=embed_desc)
             embed.set_thumbnail(
-                url=f'https://ddragon.leagueoflegends.com/cdn/11.2.1/img/profileicon/{summoners[0]["profileIconId"]}.png')
+                url=f'https://ddragon.leagueoflegends.com/cdn/11.2.1/img/profileicon/'
+                    f'{summoners[0]["profileIconId"]}.png')
             embed.add_field(name=summoners[0]['summonerName'],
                             value=f'Level: {summoners[0]["summonerLevel"]}\n'
                                   f'Verifiziert: {verified}\n'
@@ -257,7 +265,7 @@ async def listlolacc(ctx):
                             inline=False)
             if len(summoners) > 1:
                 i: int = 1
-                for summoner in summoners:
+                for _ in summoners:
                     if i != len(summoners):
                         if summoners[i]['verified'] is True:
                             verified = "Ja"
@@ -285,9 +293,11 @@ async def changemainlolacc(ctx, *, summonername):
                                        summonername, ctx.author.id)
 
         if summoner:
-            await conn.execute('UPDATE leaguesummoner SET "PrimaryAcc" = False WHERE discord_id = $1 AND "PrimaryAcc" = True', ctx.author.id)
-            await conn.execute('UPDATE leaguesummoner SET "PrimaryAcc" = True WHERE discord_id = $1 AND puuid = $2', ctx.author.id, summoner['puuid'])
-
+            await conn.execute(
+                'UPDATE leaguesummoner SET "PrimaryAcc" = False WHERE discord_id = $1 AND "PrimaryAcc" = True',
+                ctx.author.id)
+            await conn.execute('UPDATE leaguesummoner SET "PrimaryAcc" = True WHERE discord_id = $1 AND puuid = $2',
+                               ctx.author.id, summoner['puuid'])
 
             summoners = await conn.fetch(
                 'SELECT "summonerName", "profileIconId", "summonerLevel", "PrimaryAcc", verified, tier, rank FROM '
@@ -303,7 +313,8 @@ async def changemainlolacc(ctx, *, summonername):
                 embed_desc = f'Dies sind deine registrierten League Accounts'
                 embed = discord.Embed(title=embed_title, description=embed_desc)
                 embed.set_thumbnail(
-                    url=f'https://ddragon.leagueoflegends.com/cdn/11.2.1/img/profileicon/{summoners[0]["profileIconId"]}.png')
+                    url=f'https://ddragon.leagueoflegends.com/cdn/11.2.1/img/profileicon/'
+                        f'{summoners[0]["profileIconId"]}.png')
                 embed.add_field(name=summoners[0]['summonerName'],
                                 value=f'Level: {summoners[0]["summonerLevel"]}\n'
                                       f'Verifiziert: {verified}\n'
@@ -312,7 +323,7 @@ async def changemainlolacc(ctx, *, summonername):
                                 inline=False)
                 if len(summoners) > 1:
                     i: int = 1
-                    for summoner in summoners:
+                    for _ in summoners:
                         if i != len(summoners):
                             if summoners[i]['verified'] is True:
                                 verified = "Ja"
@@ -331,6 +342,7 @@ async def changemainlolacc(ctx, *, summonername):
             await ctx.send("Der von dir eingebene Account existiert bei mir nicht. Bitte überprüfe deine Eingabe!")
 
 
+# noinspection PyBroadException
 @commands.command(name='cl', alias=('clashlist', 'players'), help="Gibt die Links zu deinen Gegenerischen Clash Teams")
 @commands.has_any_role('Clash', 'Social Media Manager')
 async def clashplayers(ctx, *, summonername):
@@ -349,4 +361,5 @@ async def clashplayers(ctx, *, summonername):
         await ctx.send(f'https://euw.op.gg/multi/query={urllib.parse.quote(string)}')
         await ctx.send(f'https://porofessor.gg/pregame/euw/{urllib.parse.quote(string)}')
     except Exception as error:
+        print(error)
         await ctx.send("Es gab ein Problem beim Abrufen der Daten.")
