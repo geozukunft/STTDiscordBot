@@ -29,8 +29,8 @@ def setup(bot):
 
 
 # noinspection PyBroadException,PyTypeChecker
-@commands.command(name='addlol',
-                  help="Mit diesem Befehl kannst du einen League Account hinzufügen oder auch dessen Daten updaten ("
+@commands.command(name='addlol', help="Mit diesem Befehl kannst du einen League Account hinzufügen oder auch dessen "
+                                      "Daten updaten ( "
                        "Daten werden einmal täglich automatisch akuallisiert)! Achte hierbei auf eine korrekte "
                        "Schreibweise sonst kann ich dich nicht finden!")
 @commands.dm_only()
@@ -354,7 +354,7 @@ async def clashplayers(ctx, *, summonername):
         for player in clashteam.players:
             teamplayer = await lol.Summoner(id=player.summoner_id, platform="EUW1").get()
             await ctx.send(f'{teamplayer.name} Ausgewählte Rolle: {player.position}')
-            playernames.append((teamplayer.name.replace(" ", "")))
+            playernames.append(teamplayer.name)
 
         string = ','.join(playernames)
         await ctx.send(f'`{string}`')
