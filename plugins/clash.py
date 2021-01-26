@@ -72,7 +72,8 @@ async def listclash(ctx):
     await ctx.channel.send(content=None, embed=embed)
 
 
-@commands.command(name='clash', help="Format !clash <id> <time> prints opens the registraton for the clash event with the specifc id")
+@commands.command(name='clash', help="Format !clash <id> <time> prints opens the registraton for the clash event with "
+                                     "the specifc id")
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def getclash(ctx, *args):
     pool = ctx.bot.pool
