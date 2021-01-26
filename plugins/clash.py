@@ -27,7 +27,7 @@ def setup(bot):
     bot.add_command(printclash)
 
 
-@commands.command(name='listclash', help="Lists all Clash Events which have not yet been announced")
+@commands.command(name='lclash', help="Lists all Clash Events which have not yet been announced")
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def listclash(ctx):
     pool = ctx.bot.pool
@@ -129,7 +129,6 @@ async def getclash(ctx, *args):
                            "Events vergessen zu haben!")
 
 
-
 @commands.command(name='aclash', help="Prints all announced and ready for register clash events!")
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def aclash(ctx):
@@ -157,6 +156,7 @@ async def aclash(ctx):
             embed.add_field(name=playday, value=value, inline=False)
         await ctx.channel.send(content=None, embed=embed)
 
+
 @commands.command(name='endreg', help='Ends the registration for a specific Clash Event! !endreg <id>')
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def endreg(ctx, *args):
@@ -182,7 +182,7 @@ async def endreg(ctx, *args):
                        "beenden möchtest. Du scheinst die ID des Events vergessen zu haben!")
 
 
-@commands.command(name='printclash', help='Prints the set teams for this specific Clash Event')
+@commands.command(name='pclash', help='Prints the set teams for this specific Clash Event')
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def printclash(ctx, *args):
     pool = ctx.bot.pool
