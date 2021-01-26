@@ -4,7 +4,6 @@ import re
 
 from main import Tokens
 
-
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
 my_region = Tokens.LOL_REGION
@@ -17,7 +16,6 @@ def __init__(self, bot):
 def setup(bot):
     bot.add_command(ign)
     bot.add_command(name)
-
 
 
 @commands.command(name='ign', help='Update deinen User/Ingamenamen')
@@ -39,7 +37,6 @@ async def ign(ctx, ign):
         if role.name == "Schildkröte":
             schildkroete = True
 
-
     if schildkroete is True:
         async with pool.acquire() as conn:
             row = await conn.fetchrow('SELECT firstname FROM members WHERE discord_id = $1', ctx.author.id)
@@ -54,6 +51,7 @@ async def ign(ctx, ign):
     else:
         await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
                        "Solltest du das bereits haben dann wende dich bitte an @geozukunft#9605 auf dem STT Discord!")
+
 
 @commands.command(name='name', help='Update deinen Vor/Rufnamen')
 @commands.dm_only()
