@@ -42,7 +42,7 @@ async def ign(ctx, igninput):
         if row is not None:
             await member.edit(nick=igninput + " | " + row[0])
             async with pool.acquire() as conn:
-                await conn.execute('UPDATE members SET username = $1 WHERE discord_id = $2', ign, ctx.author.id)
+                await conn.execute('UPDATE members SET username = $1 WHERE discord_id = $2', igninput, ctx.author.id)
             await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + member.nick + "`")
         else:
             await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
@@ -79,7 +79,7 @@ async def name(ctx, nameinput):
         if row is not None:
             await member.edit(nick=row[0] + " | " + nameinput)
             async with pool.acquire() as conn:
-                await conn.execute('UPDATE members SET firstname = $1 WHERE discord_id = $2', name, ctx.author.id)
+                await conn.execute('UPDATE members SET firstname = $1 WHERE discord_id = $2', nameinput, ctx.author.id)
             await ctx.send("Dein Name auf dem STT Discord sieht nun folgendermaßen aus: `" + member.nick + "`")
         else:
             await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"

@@ -148,9 +148,13 @@ async def main():
         if isinstance(error, commands.errors.MissingRole):
             await ctx.send('Du hast für diesen Befehl nicht genügend Rechte!')
         if isinstance(error, commands.UserInputError):
-            pass
+            await ctx.send('Bitte überprüfe deine Eingabe.')
         if isinstance(error, commands.ExtensionAlreadyLoaded):
             await ctx.send('Module already loaded')
+        else:
+            await ctx.send('Hallo du bist ziemlich sicher der Serverowner des Discords auf dem ich laufe. Ich kann '
+                           'deshalb bei dir nichts ändern. Was immer ich auch machen sollte mochs söwa und gib im '
+                           'Viktor bescheid damit er des in da DB manuell mocht.')
         print(error)
 
     await bot.start(Tokens.TOKEN)
