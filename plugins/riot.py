@@ -215,10 +215,13 @@ class RiotCog(commands.Cog, name='League Account'):
                             'INSERT INTO verify(discord_id, puuid, region, creationtime, code, creation) '
                             'VALUES($1,$2,$3,$4,$5,now())',
                             ctx.author.id, lsummoner['puuid'],
-                            lsummoner['region'], datetime.datetime.utcnow().timestamp(), verify_uuid, )
+                            lsummoner['region'], datetime.datetime.utcnow().timestamp(), verify_uuid)
                         await conn.execute('INSERT INTO reactions VALUES ($1,$2,$3)', message.id, "VERIFY", ctx.author.id)
                 else:
-                    await ctx.send(f'Dein Account ist bereits verifiziert du brauchst nichts weiter tun.')
+                    await ctx.send(f'Dieser LoL Account ist nicht unter deinem Discord Account gespeichert. Wenn du denkst das jemand anders '
+                                   f'unrechtmäßig deinen Account hat melde dich bitte bei @geozukunft.')
+            else:
+                await ctx.send(f'Dein Account ist bereits verifiziert du brauchst nichts weiter tun.')
         else:
             await ctx.send(
                 f'Ich konnte deinen Account leider nicht finden. Bitte überprüfe ob du deinen Account schon mit `!addlol` '
@@ -234,7 +237,7 @@ class RiotCog(commands.Cog, name='League Account'):
         async with pool.acquire() as conn:
             summoners = await conn.fetch(
                 'SELECT "summonerName", "profileIconId", "summonerLevel", "PrimaryAcc", verified, tier, rank '
-                'FROM leaguesummoner WHERE discord_id = $1 ORDER BY "PrimaryAcc" DESC',
+                'FROM leaguesummoner WHERE discord_id = $1 ORDER BY "PrimaryAcc" DESC , "summonerLevel" DESC',
                 ctx.author.id)
 
             if summoners:
@@ -294,7 +297,7 @@ class RiotCog(commands.Cog, name='League Account'):
 
                 summoners = await conn.fetch(
                     'SELECT "summonerName", "profileIconId", "summonerLevel", "PrimaryAcc", verified, tier, rank FROM '
-                    'leaguesummoner WHERE discord_id = $1 ORDER BY "PrimaryAcc" DESC', ctx.author.id)
+                    'leaguesummoner WHERE discord_id = $1 ORDER BY "PrimaryAcc" DESC, "summonerLevel" DESC', ctx.author.id)
 
                 if summoners is not None:
 
