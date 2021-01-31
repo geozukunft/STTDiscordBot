@@ -1,18 +1,13 @@
-import os
-import logging
-
-from asyncpg.pool import Pool
-from dotenv import load_dotenv
-from discord.ext import commands, tasks
-import discord
-from pyot.core import Settings
-import builtins
-
-from pyot.models import lol
-from pyot.utils import loop_run
-
 import asyncio
+import logging
+import os
+
 import asyncpg
+import discord
+from asyncpg.pool import Pool
+from discord.ext import commands
+from dotenv import load_dotenv
+from pyot.core import Settings
 
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
@@ -22,7 +17,6 @@ logger.addHandler(handler)
 
 # Config aus .env einlesen.
 load_dotenv()
-
 
 startup_extensions = ["clash", "general", "league", "memes", "users", "reaction"]
 
@@ -41,6 +35,7 @@ class Tokens:
 
 
 # Variablen assignen
+# noinspection PyTypeChecker
 pool: Pool = "eule"
 
 intents = discord.Intents.default()
@@ -74,12 +69,6 @@ class BetterBot(commands.Bot):
         super().__init__(*args, **kwargs)
 
 
-
-
-
-
-
-
 async def main():
     global pool
 
@@ -87,13 +76,12 @@ async def main():
                                      database=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'),
                                      port=os.getenv('DB_PORT'))
 
-    # bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True)
-    bot = BetterBot(command_prefix='!', description="COOLER BOT", case_insensitive=True, intents=intents)
+    bot = BetterBot(command_prefix='!', description="Tommy the Turtle", case_insensitive=True, intents=intents)
     bot.pool = pool
-
 
     @bot.event
     async def on_ready():
+        guild = ""
         for guild in bot.guilds:
             if guild.id == Tokens.GUILD:
                 break
@@ -104,7 +92,7 @@ async def main():
         )
         members = '\n - '.join([member.name for member in guild.members])
         print(f'Guild Members:\n - {members}')
-        ignored = ["__init__", "league"]
+        ignored = ["__init__", "league", "eule"]
         extensions = [x for x in [os.path.splitext(filename)[0] for filename in os.listdir('./plugins')] if
                       x not in ignored]
 
@@ -116,9 +104,8 @@ async def main():
                 return
             print("{} loaded.".format(extension))
 
-    # Start Eule
-
     @bot.command()
+    @commands.is_owner()
     async def load(ctx, extension_name: str):
         """Loads an extension."""
         try:
@@ -129,8 +116,9 @@ async def main():
         await ctx.send("{} loaded.".format(extension_name))
 
     @bot.command()
+    @commands.is_owner()
     async def unload(ctx, extension_name: str):
-        """Loads an extension."""
+        """Unloads an extension."""
         try:
             bot.unload_extension(f'plugins.{extension_name}')
         except (AttributeError, ImportError) as e:
@@ -139,8 +127,9 @@ async def main():
         await ctx.send("{} unloaded.".format(extension_name))
 
     @bot.command()
+    @commands.is_owner()
     async def reload(ctx, extension_name: str):
-        """Loads an extension."""
+        """Reloads an extension."""
         try:
             bot.unload_extension(f'plugins.{extension_name}')
             bot.load_extension(f'plugins.{extension_name}')
@@ -158,17 +147,16 @@ async def main():
         if isinstance(error, commands.errors.MissingRole):
             await ctx.send('Du hast für diesen Befehl nicht genügend Rechte!')
         if isinstance(error, commands.UserInputError):
-            pass
+            await ctx.send('Bitte überprüfe deine Eingabe.')
         if isinstance(error, commands.ExtensionAlreadyLoaded):
             await ctx.send('Module already loaded')
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.send('Hallo du bist ziemlich sicher der Serverowner des Discords auf dem ich laufe. Ich kann '
+                           'deshalb bei dir nichts ändern. Was immer ich auch machen sollte mochs söwa und gib im '
+                           'Viktor bescheid damit er des in da DB manuell mocht.')
         print(error)
 
     await bot.start(Tokens.TOKEN)
-
-
-
-
-
 
 
 if __name__ == "__main__":

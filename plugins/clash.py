@@ -1,7 +1,7 @@
 import locale
 import re
 from datetime import datetime
-
+from pyot.models import lol
 import discord.embeds
 from dateutil import tz
 from discord.ext import commands
@@ -11,8 +11,6 @@ from main import Tokens
 TOKEN = Tokens.TOKEN
 GUILD = Tokens.GUILD
 my_region = Tokens.LOL_REGION
-
-from pyot.models import lol
 
 
 def __init__(self, bot):
@@ -27,11 +25,11 @@ def setup(bot):
     bot.add_command(printclash)
 
 
-@commands.command(name='listclash', help="Lists all Clash Events which have not yet been announced")
+@commands.command(name='lclash', help="Lists all Clash Events which have not yet been announced")
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def listclash(ctx):
     pool = ctx.bot.pool
-    currenttime: int = datetime.timestamp(datetime.now())
+    currenttime: float = datetime.timestamp(datetime.now())
     tournaments = await lol.clash.ClashTournaments().get()
     print(tournaments)
     for tournament in tournaments.tournaments:
@@ -72,11 +70,12 @@ async def listclash(ctx):
     await ctx.channel.send(content=None, embed=embed)
 
 
-@commands.command(name='clash', help="Format !clash <id> <time> prints opens the registraton for the clash event with the specifc id")
+@commands.command(name='clash', help="Format !clash <id> <time> prints opens the registraton for the clash event with "
+                                     "the specifc id")
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def getclash(ctx, *args):
     pool = ctx.bot.pool
-    clash_id: int
+    clash_id: list
     times = []
     event_times = []
     event_times_unix = []
@@ -85,7 +84,7 @@ async def getclash(ctx, *args):
         await ctx.send("Bitte stelle sicher an erster Stelle die ID des Clash Events das du erstellen möchtest "
                        "gelistet zu haben und danach bis zu 10 verschiedene Uhrzeiten!")
     if len(args) >= 2:
-        clash_id = re.findall(r"(?<!\d)\d{4,4}(?!\d)", args[0])
+        clash_id = re.findall(r"(?<!\d)\d{4}(?!\d)", args[0])
         if clash_id:
             async with pool.acquire() as conn:
                 event = await conn.fetchrow('SELECT * FROM clash_events WHERE id = $1', int(clash_id[0]))
@@ -97,7 +96,8 @@ async def getclash(ctx, *args):
             playday = datetime.utcfromtimestamp(event['registrationTime'])
             for time in times:
                 splittime = time[0].split(":")
-                temptime = playday.replace(hour=int(splittime[0]), minute=int(splittime[1]), tzinfo=tz.gettz('Europe/Vienna'))
+                temptime = playday.replace(hour=int(splittime[0]), minute=int(splittime[1]),
+                                           tzinfo=tz.gettz('Europe/Vienna'))
                 event_times.append(temptime)
                 event_times_unix.append(temptime.timestamp())
             locale.setlocale(locale.LC_TIME, "de-DE")
@@ -114,7 +114,7 @@ async def getclash(ctx, *args):
             clash_channel = discord.utils.get(ctx.guild.channels, name="clash-announcements")
             message = await clash_channel.send(content=None, embed=embed)
             j = 0
-            for event_time in event_times:
+            for _ in event_times:
                 await message.add_reaction(emojis[j])
                 j += 1
 
@@ -129,17 +129,17 @@ async def getclash(ctx, *args):
                            "Events vergessen zu haben!")
 
 
-
 @commands.command(name='aclash', help="Prints all announced and ready for register clash events!")
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def aclash(ctx):
     pool = ctx.bot.pool
 
     async with pool.acquire() as conn:
-        announced_events = await conn.fetch('SELECT * FROM clash_events WHERE announced = True AND ended = False ORDER BY '
-                                  '"registrationTime" ASC')
+        announced_events = await conn.fetch(
+            'SELECT * FROM clash_events WHERE announced = True AND ended = False ORDER BY "registrationTime"')
 
-        embed = discord.Embed(title="Clash mit laufender Registrierung", description="Für diese Clashspieltage kann man sich bereits anmelden!")
+        embed = discord.Embed(title="Clash mit laufender Registrierung",
+                              description="Für diese Clashspieltage kann man sich bereits anmelden!")
         for event in announced_events:
             locale.setlocale(locale.LC_TIME, "de-DE")
             playday = datetime.utcfromtimestamp(event['registrationTime']).strftime('%A %d %b')
@@ -157,12 +157,13 @@ async def aclash(ctx):
             embed.add_field(name=playday, value=value, inline=False)
         await ctx.channel.send(content=None, embed=embed)
 
+
 @commands.command(name='endreg', help='Ends the registration for a specific Clash Event! !endreg <id>')
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def endreg(ctx, *args):
     pool = ctx.bot.pool
 
-    clash_id = re.findall(r"(?<!\d)\d{4,4}(?!\d)", args[0])
+    clash_id = re.findall(r"(?<!\d)\d{4}(?!\d)", args[0])
 
     if clash_id:
         async with pool.acquire() as conn:
@@ -174,7 +175,8 @@ async def endreg(ctx, *args):
         msg = await channel.fetch_message(clash_event['announceMessageId'])
         print(msg)
         embed = msg.embeds[0]
-        embed.add_field(name="Die Registrierung für dieses Event wurde beendet!", value="Deine Registrierung kann nicht mehr verändert werden!", inline=False)
+        embed.add_field(name="Die Registrierung für dieses Event wurde beendet!",
+                        value="Deine Registrierung kann nicht mehr verändert werden!", inline=False)
         await msg.edit(embed=embed)
         print(embed)
     else:
@@ -182,23 +184,24 @@ async def endreg(ctx, *args):
                        "beenden möchtest. Du scheinst die ID des Events vergessen zu haben!")
 
 
-@commands.command(name='printclash', help='Prints the set teams for this specific Clash Event')
+@commands.command(name='pclash', help='Prints the set teams for this specific Clash Event')
 @commands.has_any_role('Admin', 'Social Media Manager')
 async def printclash(ctx, *args):
     pool = ctx.bot.pool
 
-    clash_id = re.findall(r"(?<!\d)\d{4,4}(?!\d)", args[0])
+    clash_id = re.findall(r"(?<!\d)\d{4}(?!\d)", args[0])
 
     if clash_id:
         async with pool.acquire() as conn:
-            event_times_record = await conn.fetchrow('SELECT event_times FROM clash_events WHERE id = $1', int(clash_id[0]))
+            event_times_record = await conn.fetchrow('SELECT event_times FROM clash_events WHERE id = $1',
+                                                     int(clash_id[0]))
 
             for event_time_list in event_times_record:
                 for event_time in event_time_list:
                     try:
                         teams_record = await conn.fetchrow(
-                            'SELECT COUNT(*) FROM clash_participation WHERE clash_id = $1 AND teamlead = True AND "participationTime" = $2',
-                            int(clash_id[0]), event_time)
+                            'SELECT COUNT(*) FROM clash_participation WHERE clash_id = $1 AND teamlead = True AND '
+                            '"participationTime" = $2', int(clash_id[0]), event_time)
 
                         i: int = 0
 
@@ -206,8 +209,8 @@ async def printclash(ctx, *args):
 
                             try:
                                 teamlead = await conn.fetchrow(
-                                    'SELECT * FROM clash_participation WHERE clash_id = $1 AND teamlead = True AND team_id = $2 '
-                                    'AND "participationTime" = $3', int(clash_id[0]), i, event_time)
+                                    'SELECT * FROM clash_participation WHERE clash_id = $1 AND teamlead = True AND '
+                                    'team_id = $2 AND "participationTime" = $3', int(clash_id[0]), i, event_time)
                             except Exception as error:
                                 print(error)
                             teamplayers = await conn.fetch(
@@ -235,6 +238,7 @@ async def printclash(ctx, *args):
                             await ctx.channel.send(content=None, embed=embed)
 
                     except TypeError as error:
+                        print(error)
                         print("Da gibts halt kein Team für die Uhrzeit")
                     except Exception as error:
                         print(error)
