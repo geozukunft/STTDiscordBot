@@ -76,8 +76,7 @@ async def main():
                                      database=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'),
                                      port=os.getenv('DB_PORT'))
 
-    # bot = commands.Bot(command_prefix='!', description="COOLER BOT", case_insensitive=True)
-    bot = BetterBot(command_prefix='!', description="COOLER BOT", case_insensitive=True, intents=intents)
+    bot = BetterBot(command_prefix='!', description="Tommy the Turtle", case_insensitive=True, intents=intents)
     bot.pool = pool
 
     @bot.event
@@ -151,7 +150,7 @@ async def main():
             await ctx.send('Bitte überprüfe deine Eingabe.')
         if isinstance(error, commands.ExtensionAlreadyLoaded):
             await ctx.send('Module already loaded')
-        else:
+        if isinstance(error, commands.MissingPermissions):
             await ctx.send('Hallo du bist ziemlich sicher der Serverowner des Discords auf dem ich laufe. Ich kann '
                            'deshalb bei dir nichts ändern. Was immer ich auch machen sollte mochs söwa und gib im '
                            'Viktor bescheid damit er des in da DB manuell mocht.')
