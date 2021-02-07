@@ -228,11 +228,11 @@ async def printclash(ctx, *args):
                             embed_desc = f'Teamlead: <@{teamlead["discord_id"]}>'
                             embed = discord.Embed(title=embed_title, description=embed_desc)
                             embed.add_field(name='Einteilung:',
-                                            value=f'<:TopLane:777326001964974080> <@{teamplayers[0]["discord_id"]}>\n'
-                                                  f'<:Jungle:777326001965105162> <@{teamplayers[1]["discord_id"]}>\n'
-                                                  f'<:MidLane:777326001902059561> <@{teamplayers[2]["discord_id"]}>\n'
-                                                  f'<:BotLane:777326001877286922> <@{teamplayers[3]["discord_id"]}>\n'
-                                                  f'<:Support:777326002061180928> <@{teamplayers[4]["discord_id"]}>',
+                                            value=f'<:TopLane:748296960586416168> <@{teamplayers[0]["discord_id"]}>\n'
+                                                  f'<:Jungle:748296968295677993> <@{teamplayers[1]["discord_id"]}>\n'
+                                                  f'<:MidLane:748296979322241145> <@{teamplayers[2]["discord_id"]}>\n'
+                                                  f'<:BotLane:807773264184737814> <@{teamplayers[3]["discord_id"]}>\n'
+                                                  f'<:Support:748296949689483385> <@{teamplayers[4]["discord_id"]}>',
                                             inline=False)
                             i += 1
                             await ctx.channel.send(content=None, embed=embed)

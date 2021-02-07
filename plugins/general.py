@@ -57,11 +57,11 @@ class GeneralCog(commands.Cog, name='Admin'):
         pool = ctx.bot.pool
 
         message = await ctx.send('Reagiere bitte auf diese Nachricht welche Lanes du in League spielst.')
-        await message.add_reaction('<:TopLane:777326001964974080>')
-        await message.add_reaction('<:Jungle:777326001965105162>')
-        await message.add_reaction('<:MidLane:777326001902059561>')
-        await message.add_reaction('<:BotLane:777326001877286922>')
-        await message.add_reaction('<:Support:777326002061180928>')
+        await message.add_reaction('<:TopLane:748296960586416168>')
+        await message.add_reaction('<:Jungle:748296968295677993>')
+        await message.add_reaction('<:MidLane:748296979322241145>')
+        await message.add_reaction('<:BotLane:807773264184737814>')
+        await message.add_reaction('<:Support:748296949689483385>')
 
         await asyncio.sleep(2)
 
@@ -74,11 +74,11 @@ class GeneralCog(commands.Cog, name='Admin'):
         pool = ctx.bot.pool
 
         message = await ctx.send('Reagiere bitte auf diese Nachricht welche Lane du primär Spielst.')
-        await message.add_reaction('<:TopLane:777326001964974080>')
-        await message.add_reaction('<:Jungle:777326001965105162>')
-        await message.add_reaction('<:MidLane:777326001902059561>')
-        await message.add_reaction('<:BotLane:777326001877286922>')
-        await message.add_reaction('<:Support:777326002061180928>')
+        await message.add_reaction('<:TopLane:748296960586416168>')
+        await message.add_reaction('<:Jungle:748296968295677993>')
+        await message.add_reaction('<:MidLane:748296979322241145>')
+        await message.add_reaction('<:BotLane:807773264184737814>')
+        await message.add_reaction('<:Support:748296949689483385>')
 
         await asyncio.sleep(2)
 
@@ -92,7 +92,7 @@ class GeneralCog(commands.Cog, name='Admin'):
         message = await ctx.send('Reagiere bitte auf diese Nachricht wenn du bei Organisierten Clash Events teilnehmen '
                                  'möchtest. \n**Wichtig du musst dazu bereits einen verknüpften und auch verifzierten '
                                  'League Account haben!**')
-        await message.add_reaction('<:clash:783486810760282193>')
+        await message.add_reaction('<:clash:807773305440436245>')
 
         await asyncio.sleep(2)
 
