@@ -80,7 +80,7 @@ class RiotCog(commands.Cog, name='League Account'):
                                 f'Du kannst mit `!addlol <ingamename>` auch noch weitere Accounts hinzufügen.\nMit '
                                 f'`!changemain <ingamename>` kannst du sofern du weitere Accounts hinzufügst deinen '
                                 f'primären Account '
-                                f'ändern. \nMit `!verifylol <ingamename> kannst du einen Account verifzieren damit sich '
+                                f'ändern. \nMit `!verifylol <ingamename>` kannst du einen Account verifzieren damit sich '
                                 f'niemand '
                                 f'anders als du ausgeben kann. Die Verifzierung deines Accounts ist auch nötig um sich '
                                 f'für die organisierten Clash Teams anmelden zu können. \n Um einen Account wieder zu '
