@@ -34,15 +34,15 @@ class GeneralCog(commands.Cog, name='Admin'):
     async def generaterules(self, ctx):
         pool = ctx.bot.pool
 
-        message = await ctx.send("FUCKING LANGER RULES TEXT BLA BLA BLA \n"
-                                 "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, \n"
-                                 "sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, \n"
-                                 "sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. \n"
-                                 "Stet clita kasd gubergren,\n"
-                                 "Zu Risiken und Nebenwirkungen lesen Sie die Packungsbeilage und fragen Sie Ihren Gott "
-                                 "oder Geo\n "
-                                 "Mit der Reaktion auf die Nachricht treten sie sämtliche Rechte ihres Lebens ab.\n"
-                                 "**Bitte macht alle Aufgaben danach die in #test-aufgaben stehen!**")
+        message = await ctx.send("**REGELN**\n\n"
+                                 "DEUTSCHSPRACHIGER SERVER / GERMAN SPEAKING SERVER\n"
+                                 "1. Einhaltung der Netiquette \n"
+                                 "2. Kanalbeschreibungen lesen! Topics nur in die dafür vorgesehenen Kanäle \n"
+                                 "3. Streaming ist, zum Schutz der Privatsphäre unserer Mitglieder, nur im dafür vorgesehenen Bereich erlaubt.\n"
+                                 "4. Das einladen von Freunden oder Bekannten ist jeder Schildkröte erlaubt.\n"
+                                 "5. Um Schildkröte zu werden, und Zugriff auf den Server zu erhalten reagiere bitte auf diese Regeln.\n\n"
+                                 "Anschließend kannst du mit unserem Bot <@757955495251279954> deine Name auf dem Server ändern, Rollen erhalten und "
+                                 "deinen League of Legends Account verknüpfen.\n ")
         await message.add_reaction('✅')
 
         await asyncio.sleep(2)
