@@ -62,8 +62,8 @@ async def newreaction(reaction):
                                                "einen deiner LoL Accounts (du kannst auch mehrere hinzufügen solltest "
                                                "du Smurfs haben) mit `!addlol <ingamename>` deinen Account hinzu. "
                                                "Dies hilft uns dabei dich bei Turnieren in einfacher in Lobbys "
-                                               "einladen zu können bzw. bei Clash Teams auf dem gleichen Spielniveu "
-                                               "zusammenzustellen. Solltest du auch zu ebensolchen Clash Teams "
+                                               "einladen zu können bzw. bei Clash Teams auf dem gleichen Spielniveau "
+                                               "zusammenzustellen. Solltest du auch zu solchen Clash Teams "
                                                "zugeteilt werden können verifiziere deinen Account nach dem "
                                                "hinzufügen. Näheres Teile ich dir nach dem hinzufügen mit.")
                 async with pool.acquire() as conn:

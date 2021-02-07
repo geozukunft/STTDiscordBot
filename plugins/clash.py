@@ -53,7 +53,7 @@ async def listclash(ctx):
 
     embed = discord.Embed(title="Zukünftige Clash Spieltage", description="Die noch nicht announced wurden!")
     for event in future_events:
-        locale.setlocale(locale.LC_TIME, "de-DE")
+        locale.setlocale(locale.LC_TIME, "de_DE")
         playday = datetime.utcfromtimestamp(event['registrationTime']).strftime('%A %d %b')
         starttime = datetime.utcfromtimestamp(event['registrationTime'])
         from_zone = tz.gettz('UTC')
@@ -100,7 +100,7 @@ async def getclash(ctx, *args):
                                            tzinfo=tz.gettz('Europe/Vienna'))
                 event_times.append(temptime)
                 event_times_unix.append(temptime.timestamp())
-            locale.setlocale(locale.LC_TIME, "de-DE")
+            locale.setlocale(locale.LC_TIME, "de_DE")
             playday = datetime.utcfromtimestamp(event['registrationTime']).strftime('%A %d %b')
             embed_title = f'Clash am {playday}'
             embed_desc = f'Bitte reagiere auf jene Uhrzeiten ab denen du für Clash Zeit hast!'
@@ -141,7 +141,7 @@ async def aclash(ctx):
         embed = discord.Embed(title="Clash mit laufender Registrierung",
                               description="Für diese Clashspieltage kann man sich bereits anmelden!")
         for event in announced_events:
-            locale.setlocale(locale.LC_TIME, "de-DE")
+            locale.setlocale(locale.LC_TIME, "de_DE")
             playday = datetime.utcfromtimestamp(event['registrationTime']).strftime('%A %d %b')
             starttime = datetime.utcfromtimestamp(event['registrationTime'])
             from_zone = tz.gettz('UTC')
