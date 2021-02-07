@@ -34,15 +34,15 @@ class GeneralCog(commands.Cog, name='Admin'):
     async def generaterules(self, ctx):
         pool = ctx.bot.pool
 
-        message = await ctx.send("FUCKING LANGER RULES TEXT BLA BLA BLA \n"
-                                 "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, \n"
-                                 "sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, \n"
-                                 "sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. \n"
-                                 "Stet clita kasd gubergren,\n"
-                                 "Zu Risiken und Nebenwirkungen lesen Sie die Packungsbeilage und fragen Sie Ihren Gott "
-                                 "oder Geo\n "
-                                 "Mit der Reaktion auf die Nachricht treten sie sämtliche Rechte ihres Lebens ab.\n"
-                                 "**Bitte macht alle Aufgaben danach die in #test-aufgaben stehen!**")
+        message = await ctx.send("**REGELN**\n\n"
+                                 "DEUTSCHSPRACHIGER SERVER / GERMAN SPEAKING SERVER\n"
+                                 "1. Einhaltung der Netiquette \n"
+                                 "2. Kanalbeschreibungen lesen! Topics nur in die dafür vorgesehenen Kanäle \n"
+                                 "3. Streaming ist, zum Schutz der Privatsphäre unserer Mitglieder, nur im dafür vorgesehenen Bereich erlaubt.\n"
+                                 "4. Das einladen von Freunden oder Bekannten ist jeder Schildkröte erlaubt.\n"
+                                 "5. Um Schildkröte zu werden, und Zugriff auf den Server zu erhalten reagiere bitte auf diese Regeln.\n\n"
+                                 "Anschließend kannst du mit unserem Bot <@757955495251279954> deine Name auf dem Server ändern, Rollen erhalten und "
+                                 "deinen League of Legends Account verknüpfen.\n ")
         await message.add_reaction('✅')
 
         await asyncio.sleep(2)
@@ -57,11 +57,11 @@ class GeneralCog(commands.Cog, name='Admin'):
         pool = ctx.bot.pool
 
         message = await ctx.send('Reagiere bitte auf diese Nachricht welche Lanes du in League spielst.')
-        await message.add_reaction('<:TopLane:777326001964974080>')
-        await message.add_reaction('<:Jungle:777326001965105162>')
-        await message.add_reaction('<:MidLane:777326001902059561>')
-        await message.add_reaction('<:BotLane:777326001877286922>')
-        await message.add_reaction('<:Support:777326002061180928>')
+        await message.add_reaction('<:TopLane:748296960586416168>')
+        await message.add_reaction('<:Jungle:748296968295677993>')
+        await message.add_reaction('<:MidLane:748296979322241145>')
+        await message.add_reaction('<:BotLane:807773264184737814>')
+        await message.add_reaction('<:Support:748296949689483385>')
 
         await asyncio.sleep(2)
 
@@ -74,11 +74,11 @@ class GeneralCog(commands.Cog, name='Admin'):
         pool = ctx.bot.pool
 
         message = await ctx.send('Reagiere bitte auf diese Nachricht welche Lane du primär Spielst.')
-        await message.add_reaction('<:TopLane:777326001964974080>')
-        await message.add_reaction('<:Jungle:777326001965105162>')
-        await message.add_reaction('<:MidLane:777326001902059561>')
-        await message.add_reaction('<:BotLane:777326001877286922>')
-        await message.add_reaction('<:Support:777326002061180928>')
+        await message.add_reaction('<:TopLane:748296960586416168>')
+        await message.add_reaction('<:Jungle:748296968295677993>')
+        await message.add_reaction('<:MidLane:748296979322241145>')
+        await message.add_reaction('<:BotLane:807773264184737814>')
+        await message.add_reaction('<:Support:748296949689483385>')
 
         await asyncio.sleep(2)
 
@@ -92,7 +92,7 @@ class GeneralCog(commands.Cog, name='Admin'):
         message = await ctx.send('Reagiere bitte auf diese Nachricht wenn du bei Organisierten Clash Events teilnehmen '
                                  'möchtest. \n**Wichtig du musst dazu bereits einen verknüpften und auch verifzierten '
                                  'League Account haben!**')
-        await message.add_reaction('<:clash:783486810760282193>')
+        await message.add_reaction('<:clash:807773305440436245>')
 
         await asyncio.sleep(2)
 

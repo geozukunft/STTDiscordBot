@@ -349,7 +349,6 @@ class RiotCog(commands.Cog, name='League Account'):
             clashteam = await lol.ClashTeam(clashplayer.players[0].team_id, platform="EUW1").get()
             for player in clashteam.players:
                 teamplayer = await lol.Summoner(id=player.summoner_id, platform="EUW1").get()
-                await ctx.send(f'{teamplayer.name} Ausgewählte Rolle: {player.position}')
                 playernames.append(teamplayer.name)
 
             string = ','.join(playernames)
