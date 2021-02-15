@@ -15,7 +15,7 @@ class UsersCog(commands.Cog, name='User'):
 
     @commands.command(name='ign', help='Update deinen User/Ingamenamen')
     @commands.dm_only()
-    async def ign(self, ctx, igninput):
+    async def ign(self, ctx, *, igninput):
         pool = ctx.bot.pool
         guild = ""
         member = ""
@@ -51,7 +51,7 @@ class UsersCog(commands.Cog, name='User'):
 
     @commands.command(name='name', help='Update deinen Vor/Rufnamen')
     @commands.dm_only()
-    async def name(self, ctx, nameinput):
+    async def name(self, ctx, *, nameinput):
         pool = ctx.bot.pool
         guild = ""
         member = ""
