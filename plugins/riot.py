@@ -250,7 +250,7 @@ class RiotCog(commands.Cog, name='League Account'):
                 embed_desc = f'Dies sind deine registrierten League Accounts'
                 embed = discord.Embed(title=embed_title, description=embed_desc)
                 embed.set_thumbnail(
-                    url=f'https://ddragon.leagueoflegends.com/cdn/11.2.1/img/profileicon/'
+                    url=f'https://ddragon.leagueoflegends.com/cdn/11.3.1/img/profileicon/'
                         f'{summoners[0]["profileIconId"]}.png')
                 embed.add_field(name=summoners[0]['summonerName'],
                                 value=f'Level: {summoners[0]["summonerLevel"]}\n'
@@ -309,7 +309,7 @@ class RiotCog(commands.Cog, name='League Account'):
                     embed_desc = f'Dies sind deine registrierten League Accounts'
                     embed = discord.Embed(title=embed_title, description=embed_desc)
                     embed.set_thumbnail(
-                        url=f'https://ddragon.leagueoflegends.com/cdn/11.2.1/img/profileicon/'
+                        url=f'https://ddragon.leagueoflegends.com/cdn/11.3.1/img/profileicon/'
                             f'{summoners[0]["profileIconId"]}.png')
                     embed.add_field(name=summoners[0]['summonerName'],
                                     value=f'Level: {summoners[0]["summonerLevel"]}\n'
