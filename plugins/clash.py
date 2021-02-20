@@ -218,7 +218,7 @@ async def printclash(ctx, *args):
                                 ' "participationTime" = $3 ORDER BY CASE lane WHEN \'top\' THEN 1 WHEN \'jgl\' THEN 2 '
                                 'WHEN \'mid\' THEN 3 WHEN \'adc\' THEN 4 WHEN \'sup\' THEN 5 ELSE 6 end ',
                                 int(clash_id[0]), i, event_time)
-                            locale.setlocale(locale.LC_TIME, "de-DE")
+                            locale.setlocale(locale.LC_TIME, "de_DE")
                             from_zone = tz.gettz('UTC')
                             to_zone = tz.gettz('Europe/Vienna')
                             playtime = datetime.utcfromtimestamp(teamlead['participationTime'])
