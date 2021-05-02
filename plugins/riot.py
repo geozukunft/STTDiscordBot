@@ -116,6 +116,7 @@ class RiotCog(commands.Cog, name='League Account'):
                 await ctx.send("Du scheinst die Regeln auf dem STT Discord noch nicht akzeptiert zu haben. \n"
                                "Solltest du das bereits haben dann wende dich bitte an @geozukunft#1311 auf dem STT "
                                "Discord!")
+                print(f'[WAR] ADDLOLACC {ctx.author.id}')
         else:
             await ctx.send(f'Ich konnte den Account {summonername} auf den EUW Servern nicht finden bitte achte darauf ihn '
                            f'richtig zu schreiben.')
