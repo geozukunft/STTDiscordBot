@@ -151,6 +151,13 @@ async def newreaction(reaction):
                                 "channel_id)"
                                 "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
                                 reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
+            else:
+                async with pool.acquire() as conn:
+                    await conn.execute(
+                        "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, "
+                        "channel_id)"
+                        "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                        reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
         elif reactionmessage['type'] == "MAINLANE":
             valid: bool = False  # Flag if emoji is a valid one for this message type
@@ -282,6 +289,28 @@ async def newreaction(reaction):
                         "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
                         reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
+        elif reactionmessage['type'] == "GAMES":
+            if user is not None:
+                async with pool.acquire() as conn:
+                    RoleEmoji = await conn.fetchrow('SELECT * FROM roles WHERE "emojiID" = $1', reaction.emoji.id)
+                if RoleEmoji is not None:
+                    async with pool.acquire() as conn:
+                        await conn.execute('INSERT INTO role_assign VALUES ($1, $2)', reaction.member.id, RoleEmoji['role_name'])
+                else:
+                    async with pool.acquire() as conn:
+                        await conn.execute(
+                            "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                            "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                            reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
+            else:
+                async with pool.acquire() as conn:
+                    await conn.execute(
+                        "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                        "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                        reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
+
+
+
 
 async def removereaction(reaction):
     global pool
@@ -403,13 +432,26 @@ async def removereaction(reaction):
                             "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
                             reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
 
+
+        elif reactionmessage['type'] == "GAMES":
+            if user is not None:
+                async with pool.acquire() as conn:
+                    RoleEmoji = await conn.fetchrow('SELECT * FROM roles WHERE "emojiID" = $1', reaction.emoji.id)
+                if RoleEmoji is not None:
+                    async with pool.acquire() as conn:
+                        await conn.execute('INSERT INTO role_assign VALUES ($1, $2, $3)', reaction.user_id, RoleEmoji['role_name'], True)
+                else:
+                    async with pool.acquire() as conn:
+                        await conn.execute(
+                            "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
+                            "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
+                            reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
             else:
                 async with pool.acquire() as conn:
                     await conn.execute(
                         "INSERT INTO reaction_to_delete(discord_id, message_id, emoji_id, emoji_name, channel_id)"
                         "VALUES ($1,$2,$3,$4,$5)", reaction.user_id, reaction.message_id,
                         reaction.emoji.id, reaction.emoji.name, reaction.channel_id)
-
 
 """    
     async with pool.acquire() as conn:

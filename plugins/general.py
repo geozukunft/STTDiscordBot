@@ -99,6 +99,38 @@ class GeneralCog(commands.Cog, name='Admin'):
         async with pool.acquire() as conn:
             await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "ROLES")
 
+    @commands.command(name='generateroles')
+    @commands.has_role('Social Media Manager')
+    async def generateroles(self, ctx):
+        """Generiert eine Nachricht für die Rolen """
+        pool = ctx.bot.pool
+
+        message = await ctx.send('**ROLLEN**')
+
+        async with pool.acquire() as conn:
+            await conn.execute('INSERT INTO reactions VALUES ($1, $2)', message.id, "GAMES")
+
+    @commands.command(name='addrole')
+    @commands.has_role('Oberkröte (Mod)')
+    async def addrole(self, ctx, *args):
+        pool = ctx.bot.pool
+
+        async with pool.acquire() as conn:
+            reactionmsg = await conn.fetchrow("SELECT * FROM reactions WHERE type = 'GAMES'")
+
+        message = await ctx.channel.fetch_message(reactionmsg['message_id'])
+        await message.add_reaction(args[0])
+
+        await asyncio.sleep(2)
+
+        emojiSTEP1 = args[0]
+        emojiSTEP2 = emojiSTEP1.split(':')
+        emojiSTEP3 = emojiSTEP2[2].split('>')
+        emojiID = int(emojiSTEP3[0])
+        print(ctx.message.role_mentions[0].name)
+        async with pool.acquire() as conn:
+            await conn.execute("INSERT INTO roles VALUES ($1, $2, $3)", ctx.message.raw_role_mentions[0], emojiID, ctx.message.role_mentions[0].name)
+
     @commands.command(name='listemojis', hidden=True)
     @commands.has_role('Social Media Manager')
     async def listemojis(self, ctx):
