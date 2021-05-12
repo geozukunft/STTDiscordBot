@@ -117,6 +117,8 @@ async def getclash(ctx, *args):
             for _ in event_times:
                 await message.add_reaction(emojis[j])
                 j += 1
+            
+            await asyncio.sleep(2)
 
             async with pool.acquire() as conn:
                 await conn.execute('INSERT INTO reactions(message_id, type) VALUES ($1, $2)', message.id, "CLASH")
